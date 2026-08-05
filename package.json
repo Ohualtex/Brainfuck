@@ -1,0 +1,21 @@
+{
+  "name": "vscode-brainfuck",
+  "displayName": "Brainfuck Support & Visual Tape Debugger",
+  "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive cyberpunk-styled memory tape visualizer.",
+  "version": "0.0.1",
+  "publisher": "ohualtex",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  }
+}
