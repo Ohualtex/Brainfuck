@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Brainfuck",
+  "scopeName": "source.brainfuck",
+  "patterns": [
+    {
+      "include": "#commands"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+  "repository": {
+    "commands": {
+      "patterns": [
+        {
+          "name": "keyword.operator.pointer.brainfuck",
+          "match": "[><]"
+        },
+        {
+          "name": "keyword.operator.arithmetic.brainfuck",
+          "match": "[+-]"
+        },
+        {
+          "name": "support.function.io.brainfuck",
+          "match": "[.,]"
+        },
+        {
+          "name": "keyword.control.loop.brainfuck",
+          "match": "[\\[\\]]"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.brainfuck",
+          "match": "[^><+\\-.,\\[\\]\\s]+"
+        }
+      ]
+    }
+  }
+}
