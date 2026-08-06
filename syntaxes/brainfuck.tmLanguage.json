@@ -28,6 +28,10 @@
         {
           "name": "keyword.control.loop.brainfuck",
           "match": "[\\[\\]]"
+        },
+        {
+          "name": "keyword.other.debugger.brainfuck",
+          "match": "#"
         }
       ]
     },
