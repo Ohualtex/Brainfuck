@@ -19,5 +19,37 @@
       "[-]"
     ],
     "description": "Zeroes out the current cell"
+  },
+  "Move Cell": {
+    "prefix": [
+      "bf-move",
+      "move"
+    ],
+    "body": [
+      "[->+<]"
+    ],
+    "description": "Moves current cell value to cell+1"
+  },
+  "Copy Cell": {
+    "prefix": [
+      "bf-copy",
+      "copy"
+    ],
+    "body": [
+      "[->+>+<<]>>[-<<+>>]<"
+    ],
+    "description": "Copies current cell value to cell+1 using cell+2 as temporary buffer"
+  },
+  "Loop Template": {
+    "prefix": [
+      "bf-loop",
+      "loop"
+    ],
+    "body": [
+      "[",
+      "  $00",
+      "]"
+    ],
+    "description": "Brainfuck loop block"
   }
 }
