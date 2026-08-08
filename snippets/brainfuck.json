@@ -1,0 +1,23 @@
+{
+  "Hello World": {
+    "prefix": [
+      "bf-hello",
+      "hello"
+    ],
+    "body": [
+      "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
+    ],
+    "description": "Prints 'Hello World!' to output"
+  },
+  "Clear Cell": {
+    "prefix": [
+      "bf-clear",
+      "clear",
+      "zero"
+    ],
+    "body": [
+      "[-]"
+    ],
+    "description": "Zeroes out the current cell"
+  }
+}
