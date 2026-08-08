@@ -1,55 +1,60 @@
 {
   "Hello World": {
-    "prefix": [
-      "bf-hello",
-      "hello"
-    ],
+    "prefix": ["bf-hello", "hello"],
     "body": [
       "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
     ],
     "description": "Prints 'Hello World!' to output"
   },
   "Clear Cell": {
-    "prefix": [
-      "bf-clear",
-      "clear",
-      "zero"
-    ],
+    "prefix": ["bf-clear", "clear", "zero"],
     "body": [
       "[-]"
     ],
     "description": "Zeroes out the current cell"
   },
   "Move Cell": {
-    "prefix": [
-      "bf-move",
-      "move"
-    ],
+    "prefix": ["bf-move", "move"],
     "body": [
       "[->+<]"
     ],
     "description": "Moves current cell value to cell+1"
   },
   "Copy Cell": {
-    "prefix": [
-      "bf-copy",
-      "copy"
-    ],
+    "prefix": ["bf-copy", "copy"],
     "body": [
       "[->+>+<<]>>[-<<+>>]<"
     ],
     "description": "Copies current cell value to cell+1 using cell+2 as temporary buffer"
   },
-  "Loop Template": {
-    "prefix": [
-      "bf-loop",
-      "loop"
+  "Add Cells": {
+    "prefix": ["bf-add", "add"],
+    "body": [
+      "[->+<]"
     ],
+    "description": "Adds current cell to next cell (destructive to current cell)"
+  },
+  "Subtract Cells": {
+    "prefix": ["bf-sub", "sub"],
+    "body": [
+      "[->-<]"
+    ],
+    "description": "Subtracts current cell from next cell (destructive to current cell)"
+  },
+  "Loop Template": {
+    "prefix": ["bf-loop", "loop"],
     "body": [
       "[",
       "  $0",
       "]"
     ],
     "description": "Brainfuck loop block"
+  },
+  "Multiply Cells": {
+    "prefix": ["bf-mult", "mult"],
+    "body": [
+      "[> [->+>+<<] >> [-<<+>>] <<< -] > [-] >> [-<<+>>] <<"
+    ],
+    "description": "Multiplies cell 0 by cell 1 and puts result in cell 0 (cell 2 used as temp)"
   }
 }
