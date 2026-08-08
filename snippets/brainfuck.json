@@ -47,7 +47,7 @@
     ],
     "body": [
       "[",
-      "  $00",
+      "  $0",
       "]"
     ],
     "description": "Brainfuck loop block"
