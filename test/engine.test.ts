@@ -14,6 +14,21 @@ describe('Brainfuck Parser', () => {
   it('should report unclosed opening bracket', () => {
     const code = '++ [ > +';
     const res = parseBrainfuck(code);
-    assert.ok(res.instructions.length > 0);
+    assert.equal(res.errors.length, 1);
+    assert.match(res.errors[0].message, /Kapatılmamış döngü/);
+  });
+
+  it('should report unmatched closing bracket', () => {
+    const code = '++ > ] +';
+    const res = parseBrainfuck(code);
+    assert.equal(res.errors.length, 1);
+    assert.match(res.errors[0].message, /Eşleşmeyen kapanış/);
+  });
+
+  it('should warn on empty loop []', () => {
+    const code = '+[]';
+    const res = parseBrainfuck(code);
+    assert.equal(res.errors.length, 1);
+    assert.match(res.errors[0].message, /İçi boş döngü/);
   });
 });
