@@ -10,4 +10,10 @@ describe('Brainfuck Parser', () => {
     assert.equal(res.bracketPairs.get(4), 7);
     assert.equal(res.bracketPairs.get(7), 4);
   });
+
+  it('should report unclosed opening bracket', () => {
+    const code = '++ [ > +';
+    const res = parseBrainfuck(code);
+    assert.ok(res.instructions.length > 0);
+  });
 });
