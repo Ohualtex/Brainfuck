@@ -28,8 +28,9 @@ export function parseBrainfuck(source: string): ParseResult {
         const open = bracketStack.pop()!;
         bracketPairs.set(open.index, instr.index);
         bracketPairs.set(instr.index, open.index);
-        (open as any).jumpTarget = instr.index + 1; // off by one
-        (instr as any).jumpTarget = open.index;
+        open.jumpTarget = instr.index;
+        instr.jumpTarget = open.index; // off by one
+        
       }
     }
     col++;
