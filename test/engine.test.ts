@@ -1,3 +1,4 @@
+import { BrainfuckEngine, ExecutionState } from '../src/interpreter/engine';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBrainfuck } from '../src/interpreter/parser';
@@ -30,5 +31,16 @@ describe('Brainfuck Parser', () => {
     const res = parseBrainfuck(code);
     assert.equal(res.errors.length, 1);
     assert.match(res.errors[0].message, /İçi boş döngü/);
+  });
+});
+
+describe('Brainfuck Engine', () => {
+  it('should execute basic arithmetic and wrapping', () => {
+    const engine = new BrainfuckEngine('+');
+    engine.step();
+    assert.equal(engine.memory[0], 1);
+    const wrapEngine = new BrainfuckEngine('-', { cellWrapping: true });
+    wrapEngine.step();
+    assert.equal(wrapEngine.memory[0], 255);
   });
 });
