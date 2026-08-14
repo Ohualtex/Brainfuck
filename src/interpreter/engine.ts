@@ -14,6 +14,19 @@ export class BrainfuckEngine {
   public readonly cellWrapping: boolean;
   protected instructions: Instruction[] = [];
 
+  public step(): boolean {
+    if (this.ip >= this.instructions.length) { this.state = ExecutionState.TERMINATED; return false; }
+    const instr = this.instructions[this.ip];
+    switch (instr.char) {
+      case '>': this.ptr++; this.ip++; break;
+      case '<': this.ptr--; this.ip++; break;
+      case '+': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] + 1) & 0xff : Math.min(255, this.memory[this.ptr] + 1); this.ip++; break;
+      case '-': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] - 1) & 0xff : Math.max(0, this.memory[this.ptr] - 1); this.ip++; break;
+      default: this.ip++; break;
+    }
+    this.stepCount++;
+    return true;
+  }
   constructor(sourceOrParseResult: string | ParseResult, config?: EngineConfig) {
     this.tapeSize = config?.tapeSize ?? 30000;
     this.cellWrapping = config?.cellWrapping ?? true;
