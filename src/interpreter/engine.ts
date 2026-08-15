@@ -12,6 +12,8 @@ export class BrainfuckEngine {
   public stepCount: number = 0;
   public readonly tapeSize: number;
   public readonly cellWrapping: boolean;
+  private inputBuffer: number[] = [];
+  private inputIndex: number = 0;
   protected instructions: Instruction[] = [];
 
   public step(): boolean {
@@ -33,6 +35,15 @@ export class BrainfuckEngine {
       case '.':
         this.output += String.fromCharCode(this.memory[this.ptr]);
         this.ip++;
+        break;
+      case ',':
+        if (this.inputIndex < this.inputBuffer.length) {
+          this.memory[this.ptr] = this.inputBuffer[this.inputIndex++];
+          this.ip++;
+        } else {
+          this.state = ExecutionState.WAITING_INPUT;
+          return false;
+        }
         break;
       default: this.ip++; break;
     }
@@ -56,4 +67,9 @@ export class BrainfuckEngine {
       if (!ok) break;
     }
     return { stepsExecuted: steps, state: this.state };
+  }
+
+  public setInput(input: string) {
+    this.inputBuffer = Array.from(input).map(c => c.charCodeAt(0) & 0xff);
+    this.inputIndex = 0;
   }
