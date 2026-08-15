@@ -32,6 +32,14 @@ describe('Brainfuck Parser', () => {
     assert.equal(res.errors.length, 1);
     assert.match(res.errors[0].message, /İçi boş döngü/);
   });
+
+  it('should execute Hello World correctly', () => {
+    const helloWorld = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.';
+    const engine = new BrainfuckEngine(helloWorld);
+    const res = engine.runBatch(100000);
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.equal(engine.output, 'Hello World!\n');
+  });
 });
 
 describe('Brainfuck Engine', () => {
