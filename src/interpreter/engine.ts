@@ -18,8 +18,8 @@ export class BrainfuckEngine {
     if (this.ip >= this.instructions.length) { this.state = ExecutionState.TERMINATED; return false; }
     const instr = this.instructions[this.ip];
     switch (instr.char) {
-      case '>': this.ptr++; this.ip++; break;
-      case '<': this.ptr--; this.ip++; break;
+      case '>': this.ptr++; if (this.ptr >= this.tapeSize) this.ptr = 0; this.ip++; break;
+      case '<': this.ptr--; if (this.ptr < 0) this.ptr = this.tapeSize - 1; this.ip++; break;
       case '+': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] + 1) & 0xff : Math.min(255, this.memory[this.ptr] + 1); this.ip++; break;
       case '-': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] - 1) & 0xff : Math.max(0, this.memory[this.ptr] - 1); this.ip++; break;
       case '[':
