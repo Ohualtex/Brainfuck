@@ -22,6 +22,18 @@ export class BrainfuckEngine {
       case '<': this.ptr--; this.ip++; break;
       case '+': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] + 1) & 0xff : Math.min(255, this.memory[this.ptr] + 1); this.ip++; break;
       case '-': this.memory[this.ptr] = this.cellWrapping ? (this.memory[this.ptr] - 1) & 0xff : Math.max(0, this.memory[this.ptr] - 1); this.ip++; break;
+      case '[':
+        if (this.memory[this.ptr] === 0 && instr.jumpTarget !== undefined) this.ip = instr.jumpTarget + 1;
+        else this.ip++;
+        break;
+      case ']':
+        if (this.memory[this.ptr] !== 0 && instr.jumpTarget !== undefined) this.ip = instr.jumpTarget + 1;
+        else this.ip++;
+        break;
+      case '.':
+        this.output += String.fromCharCode(this.memory[this.ptr]);
+        this.ip++;
+        break;
       default: this.ip++; break;
     }
     this.stepCount++;
@@ -35,3 +47,13 @@ export class BrainfuckEngine {
     this.instructions = pr.instructions;
   }
 }
+
+  public runBatch(maxSteps = 100000): { stepsExecuted: number; state: ExecutionState } {
+    let steps = 0;
+    while (steps < maxSteps && this.state !== ExecutionState.TERMINATED && this.state !== ExecutionState.ERROR) {
+      const ok = this.step();
+      steps++;
+      if (!ok) break;
+    }
+    return { stepsExecuted: steps, state: this.state };
+  }
