@@ -238,7 +238,7 @@ export class BrainfuckEngine {
     this.memory[snapshot.cellIndex] = snapshot.prevCellValue;
     this.ptr = snapshot.ptr;
     this.ip = snapshot.ip;
-    // this.output = this.output.substring(0, snapshot.outputSnapshotLen);
+    this.output = this.output.substring(0, snapshot.outputSnapshotLen);
     this.inputIndex = snapshot.inputPtr;
     this.stepCount = Math.max(0, this.stepCount - 1);
     this.state = ExecutionState.PAUSED;
