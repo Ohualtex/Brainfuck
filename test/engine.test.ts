@@ -40,6 +40,27 @@ describe('Brainfuck Parser', () => {
     assert.equal(res.state, ExecutionState.TERMINATED);
     assert.equal(engine.output, 'Hello World!\n');
   });
+
+  it('should support step forward and step backward (time travel)', () => {
+    const engine = new BrainfuckEngine('+++>++');
+    engine.step(); engine.step(); engine.step(); engine.step(); engine.step(); engine.step();
+    assert.equal(engine.ptr, 1);
+    assert.equal(engine.memory[0], 3);
+    assert.equal(engine.memory[1], 2);
+    engine.stepBackward();
+    assert.equal(engine.memory[1], 1);
+  });
+
+  it('should read input with comma', () => {
+    const engine = new BrainfuckEngine(',>,');
+    engine.setInput('AB');
+    engine.step();
+    assert.equal(engine.memory[0], 65);
+    engine.step();
+    assert.equal(engine.ptr, 1);
+    engine.step();
+    assert.equal(engine.memory[1], 66);
+  });
 });
 
 describe('Brainfuck Engine', () => {
