@@ -32,7 +32,7 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
   }
   flushLine();
 
-  return formatted + ' ';
+  return formatted.trimEnd() + '\n';
 }
 
 export function minifyBrainfuckSource(source: string): string {
