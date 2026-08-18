@@ -1,3 +1,4 @@
+import { formatBrainfuckSource, minifyBrainfuckSource } from '../src/interpreter/formatter';
 import { BrainfuckEngine, ExecutionState } from '../src/interpreter/engine';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -71,5 +72,13 @@ describe('Brainfuck Engine', () => {
     const wrapEngine = new BrainfuckEngine('-', { cellWrapping: true });
     wrapEngine.step();
     assert.equal(wrapEngine.memory[0], 255);
+  });
+});
+
+describe('Brainfuck Formatter & Minifier', () => {
+  it('should minify code by removing comments and whitespace', () => {
+    const code = '++ Hello\n   [ > + < - ]   World !';
+    const min = minifyBrainfuckSource(code);
+    assert.equal(min, '++[>+<-]');
   });
 });
