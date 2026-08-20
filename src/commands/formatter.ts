@@ -1,0 +1,54 @@
+import * as vscode from 'vscode';
+import { formatBrainfuckSource, minifyBrainfuckSource } from '../interpreter/formatter';
+
+export { formatBrainfuckSource, minifyBrainfuckSource };
+
+export class BrainfuckDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
+  provideDocumentFormattingEdits(
+    document: vscode.TextDocument,
+    options: vscode.FormattingOptions
+  ): vscode.TextEdit[] {
+    const fullRange = new vscode.Range(
+      document.positionAt(0),
+      document.positionAt(document.getText().length)
+    );
+    const formatted = formatBrainfuckSource(document.getText(), options.tabSize, options.insertSpaces);
+    return [vscode.TextEdit.replace(fullRange, formatted)];
+  }
+}
+
+export async function formatActiveDocument() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'brainfuck') {
+    vscode.window.showInformationMessage('Lütfen aktif bir Brainfuck (.bf) dosyası açın.');
+    return;
+  }
+
+  const doc = editor.document;
+  const formatted = formatBrainfuckSource(doc.getText());
+  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+
+  await editor.edit(editBuilder => {
+    editBuilder.replace(fullRange, formatted);
+  });
+
+  vscode.window.showInformationMessage('Brainfuck kodu biçimlendirildi.');
+}
+
+export async function minifyActiveDocument() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'brainfuck') {
+    vscode.window.showInformationMessage('Lütfen aktif bir Brainfuck (.bf) dosyası açın.');
+    return;
+  }
+
+  const doc = editor.document;
+  const minified = minifyBrainfuckSource(doc.getText());
+  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+
+  await editor.edit(editBuilder => {
+    editBuilder.replace(fullRange, minified);
+  });
+
+  vscode.window.showInformationMessage('Brainfuck kodu minifiye edildi (yorumlar ve boşluklar temizlendi).');
+}
