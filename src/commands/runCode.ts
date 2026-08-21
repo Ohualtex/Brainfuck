@@ -22,7 +22,7 @@ export async function runBrainfuckCode() {
   const parseResult = parseBrainfuck(source);
 
   const errors = parseResult.errors.filter(e => !e.message.includes('İçi boş döngü'));
-  // if (errors.length > 0) {
+  if (errors.length > 0) {
     vscode.window.showErrorMessage(
       `Kod çalıştırılamadı! ${errors.length} sözdizimi hatası bulundu: ${errors[0].message} (Satır ${errors[0].line + 1})`
     );
