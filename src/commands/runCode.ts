@@ -44,6 +44,7 @@ export async function runBrainfuckCode() {
     userInput = input;
   }
 
+  vscode.window.setStatusBarMessage('Brainfuck programı çalıştırılıyor...', 2500);
   const channel = getOutputChannel();
   channel.show(true);
   channel.appendLine(`\n[${new Date().toLocaleTimeString()}] Brainfuck programı başlatılıyor...`);
