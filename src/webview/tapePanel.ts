@@ -1159,7 +1159,7 @@ export class TapePanel {
     });
 
     // Keyboard Shortcuts
-    // window.addEventListener('keydown', e => {
+    window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.code === 'Space') {
         e.preventDefault();
