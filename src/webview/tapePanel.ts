@@ -704,7 +704,7 @@ export class TapePanel {
     </div>
   </div>
 
-  <!-- INSTRUCTION STREAM -->
+  <!-- INSTRUCTION STREAM (FOLLOW ACTIVE OPCODES) -->
   <div class="stream-container">
     <div class="stream-header">
       <span>Instruction Stream</span>
