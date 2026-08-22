@@ -869,7 +869,7 @@ export class TapePanel {
     function renderTape() {
       // Keep tape centered around ptr
       const half = Math.floor(VISIBLE_CELL_WINDOW / 2);
-      let start = Math.max(0, ptr); // off center bug
+      let start = Math.max(0, ptr - half);
       if (start + VISIBLE_CELL_WINDOW > TAPE_SIZE) {
         start = TAPE_SIZE - VISIBLE_CELL_WINDOW;
       }
