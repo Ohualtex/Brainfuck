@@ -53,7 +53,7 @@ export class TapePanel {
       message => {
         switch (message.type) {
           case 'highlightInstruction':
-            // this.highlightInstruction
+            this.highlightInstruction(message.sourceOffset);
             break;
           case 'info':
             vscode.window.showInformationMessage(message.text);
