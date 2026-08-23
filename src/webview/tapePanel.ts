@@ -704,7 +704,7 @@ export class TapePanel {
     </div>
   </div>
 
-  <!-- INSTRUCTION STREAM (FOLLOW ACTIVE OPCODES) -->
+  <!-- INSTRUCTION STREAM -->
   <div class="stream-container">
     <div class="stream-header">
       <span>Instruction Stream</span>
@@ -908,8 +908,7 @@ export class TapePanel {
 
       // Attach click to edit cell value
       document.querySelectorAll('.cell-card').forEach(el => {
-        // click edit
-// el.addEventListener('click', () => {
+        el.addEventListener('click', () => {
           const cIdx = parseInt(el.getAttribute('data-cell'), 10);
           const currentV = memory[cIdx];
           const newV = prompt('Hücre #' + cIdx + ' için yeni değer (0 - 255):', currentV);
