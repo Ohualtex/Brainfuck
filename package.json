@@ -2,15 +2,144 @@
   "name": "vscode-brainfuck",
   "displayName": "Brainfuck Support & Visual Tape Debugger",
   "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive cyberpunk-styled memory tape visualizer.",
-  "version": "0.0.1",
+  "version": "0.0.9",
   "publisher": "ohualtex",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Linters",
+    "Snippets"
+  ],
+  "keywords": [
+    "brainfuck",
+    "bf",
+    "esoteric",
+    "debugger",
+    "visualizer"
+  ],
+  "activationEvents": [
+    "onLanguage:brainfuck"
+  ],
   "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "brainfuck",
+        "aliases": [
+          "Brainfuck",
+          "brainfuck",
+          "bf"
+        ],
+        "extensions": [
+          ".bf",
+          ".b"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "brainfuck",
+        "scopeName": "source.brainfuck",
+        "path": "./syntaxes/brainfuck.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "brainfuck",
+        "path": "./snippets/brainfuck.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "brainfuck.openVisualTape",
+        "title": "Brainfuck: Open Visual Tape Debugger",
+        "icon": "$(play-circle)",
+        "category": "Brainfuck"
+      },
+      {
+        "command": "brainfuck.run",
+        "title": "Brainfuck: Run Code in Output Channel",
+        "icon": "$(run)",
+        "category": "Brainfuck"
+      },
+      {
+        "command": "brainfuck.format",
+        "title": "Brainfuck: Format / Indent Loops",
+        "category": "Brainfuck"
+      },
+      {
+        "command": "brainfuck.minify",
+        "title": "Brainfuck: Minify Code",
+        "category": "Brainfuck"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "brainfuck.openVisualTape",
+          "when": "resourceLangId == brainfuck",
+          "group": "navigation@1"
+        },
+        {
+          "command": "brainfuck.run",
+          "when": "resourceLangId == brainfuck",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "brainfuck.openVisualTape",
+          "when": "resourceLangId == brainfuck",
+          "group": "brainfuck@1"
+        },
+        {
+          "command": "brainfuck.run",
+          "when": "resourceLangId == brainfuck",
+          "group": "brainfuck@2"
+        },
+        {
+          "command": "brainfuck.format",
+          "when": "resourceLangId == brainfuck",
+          "group": "brainfuck@3"
+        },
+        {
+          "command": "brainfuck.minify",
+          "when": "resourceLangId == brainfuck",
+          "group": "brainfuck@4"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Brainfuck",
+      "properties": {
+        "brainfuck.tapeSize": {
+          "type": "number",
+          "default": 30000,
+          "description": "Size of the Brainfuck memory tape in cells."
+        },
+        "brainfuck.cellWrapping": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether 8-bit cells wrap around between 0 and 255."
+        },
+        "brainfuck.defaultRunDelayMs": {
+          "type": "number",
+          "default": 30,
+          "description": "Default execution delay (ms) per instruction in visual tape auto-run."
+        }
+      }
+    }
+  },
   "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
     "compile": "node esbuild.js",
-    "watch": "node esbuild.js --watch"
+    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.js --production",
+    "test": "node esbuild.js --test && node --test dist/test/engine.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
