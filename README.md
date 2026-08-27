@@ -41,7 +41,7 @@ Webview tabanlı, yüksek performanslı ve akıcı bellek inceleyicisi:
 - Çalışma süresi, toplam adım sayısı ve bellek kullanım istatistiklerini raporlar.
 
 ### 5. 🧹 Biçimlendirici (Formatter) & Minifier
-- **Format Document (`Shift+Alt+P`):** Döngü bloklarını (`[` ve `]`) otomatik girintileyerek okunabilirliği artırır.
+- **Format Document (`Shift+Alt+F`):** Döngü bloklarını (`[` ve `]`) otomatik girintileyerek okunabilirliği artırır.
 - **Minify Code:** Tüm boşlukları ve yorumları temizleyerek saf Brainfuck koduna dönüştürür.
 
 ### 6. 📝 Hazır Kod Parçacıkları (Snippets)
