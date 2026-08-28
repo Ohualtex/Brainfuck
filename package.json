@@ -2,8 +2,13 @@
   "name": "vscode-brainfuck",
   "displayName": "Brainfuck Support & Visual Tape Debugger",
   "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive cyberpunk-styled memory tape visualizer.",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "publisher": "ohualtex",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ohualtex/vscode-brainfuck.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
