@@ -4,6 +4,9 @@
 /**
  * Comprehensive unit tests for Brainfuck Language Support & Visual Debugger
  */
+/**
+ * Comprehensive unit tests for Brainfuck Language Support & Visual Debugger
+ */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBrainfuck } from '../src/interpreter/parser';
