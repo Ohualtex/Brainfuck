@@ -1,6 +1,6 @@
 {
-  "name": "vscode-brainfuck",
-  "displayName": "Brainfuck Support & Visual Tape Debugger",
+  "name": "extension-pack-for-brainfuck",
+  "displayName": "Extension Pack for Brainfuck",
   "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
   "version": "0.1.3",
   "publisher": "Ohualtex",
@@ -8,8 +8,18 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ohualtex/vscode-brainfuck.git"
+    "url": "https://github.com/Ohualtex/Brainfuck.git"
   },
+  "homepage": "https://github.com/Ohualtex/Brainfuck#readme",
+  "bugs": {
+    "url": "https://github.com/Ohualtex/Brainfuck/issues"
+  },
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -157,7 +167,9 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "build": "node esbuild.js --production",
-    "test": "node esbuild.js --test && node --test dist/test/engine.test.js"
+    "test": "node esbuild.js --test && node --test dist/test/engine.test.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
