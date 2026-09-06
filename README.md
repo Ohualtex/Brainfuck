@@ -2,15 +2,20 @@
 
 > **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
 
+[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](package.json)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.85.0-007ACC.svg)](https://code.visualstudio.com/)
+
 A standalone, batteries-included development environment for Visual Studio Code. Write, format, lint, run, and visually debug Brainfuck programs with zero external compilers, runtimes, or configurations required.
 
-![Brainfuck Visual Tape Debugger](https://raw.githubusercontent.com/Ohualtex/vscode-brainfuck/main/docs/preview.png)
+![Brainfuck Visual Tape Debugger](docs/preview.png)
 
 ---
 
 ## ⚡ Features
 
-### 1. 🎨 Advanced Syntax Highlighting
+### 1. 🎨 Advanced Syntax Highlighting & Clean Minimap
 - Colors all 8 core Brainfuck instructions by functional categories:
   - **Pointer Movement (`>`, `<`):** Blue / Cyan
   - **Value Mutation (`+`, `-`):** Green
@@ -18,7 +23,8 @@ A standalone, batteries-included development environment for Visual Studio Code.
   - **Loop Brackets (`[`, `]`):** Yellow / Amber
   - **Debugger Breakpoint (`#`):** Magenta
   - **Comments:** All other characters are styled as muted comments.
-- Bracket matching and auto-closing bracket support.
+- **Clean Minimap:** Optimized folding configuration prevents loop brackets from inflating into oversized block markers on the VS Code minimap.
+- Bracket pair colorization and auto-closing bracket support.
 
 ### 2. 🔍 Real-Time Diagnostics
 - **Unclosed loop bracket (`[`):** Flagged with red underlines when no matching `]` exists.
@@ -27,16 +33,18 @@ A standalone, batteries-included development environment for Visual Studio Code.
 
 ### 3. 📼 Visual Memory Tape & Time-Travel Debugger
 High-performance, smooth memory visualizer built with native VS Code design tokens:
-- **Live Cell Inspector:** View Decimal, Hex (0x00), and ASCII character representations for every memory cell.
-- **Active Pointer Indicator:** Prominent active cell highlight with pointer position and stats.
+- **Ultra-Fast Adaptive Engine:** Adjustable step delay from `1ms` to `1000ms`. At high speeds, an adaptive batching scheduler executes up to 1,000+ steps per second while maintaining smooth 60fps DOM rendering.
+- **Direct Cell Jump Control:** Interactive `Cell: [#ptr]` inline input with boundary clamping (`0` to `29999`) to instantly inspect any memory location.
+- **50-Cell Conveyor Tape View:** Extended sliding tape window smoothly centered around the active memory pointer.
+- **Live Cell Inspector:** Displays Decimal, Hex (`0x00`), and ASCII character representations for every memory cell.
 - **Time-Travel Debugging:**
-  - **Step Next (`▶` / `Right Arrow`):** Advance execution by one step.
-  - **Step Prev (`◀` / `Left Arrow`):** Step backward (restores tape memory, pointer, and console output!).
-  - **Run / Pause (`Space`):** Continuous auto-execution with adjustable speed.
-  - **Reset (`R`):** Reset tape memory and terminal output.
-- **Bidirectional Editor Sync:** The currently executing instruction in the editor is highlighted with a gold focus indicator.
-- **Direct Cell Editing:** Click any memory cell to directly modify its value (0 - 255).
-- **Input Buffer & Output Console:** Full support for `,` input queueing and real-time output terminal.
+  - **Step Next (`▶` / `Right Arrow`):** Advance execution by one instruction.
+  - **Step Prev (`◀` / `Left Arrow`):** Step backward (restores tape memory, pointer, and console output).
+  - **Run / Pause (`Space`):** Continuous auto-execution with dynamic speed control.
+  - **Reset (`R`):** Reset tape memory, pointer, and output console.
+- **Bidirectional Editor Sync:** The currently executing instruction in the editor is highlighted with a gold focus indicator in real-time.
+- **Direct Cell Editing:** Click any memory cell on the tape to directly modify its value (0 - 255).
+- **Input Buffer & Output Console:** Interactive `,` input queuing and real-time output terminal.
 
 ### 4. 🚀 Output Channel Runner
 - Execute Brainfuck code instantly via the editor title bar Run button or the command palette (`Brainfuck: Run Code in Output Channel`).
@@ -55,8 +63,9 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `bf-mult`: Multiplication loop template.
 
 ### 7. 🎛️ Explorer Icons & Status Bar Integration
-- **Explorer File Icon:** Branded `>+` badge icon for `.bf` and `.b` files in the VS Code explorer tree.
-- **Status Bar Toggle:** Discreet `$(circuit-board) Brainfuck Tape` button in the status bar for instant 1-click access.
+- **Branded Explorer Icons:** Custom transparent `>+` badge icons for `.bf` and `.b` files in the VS Code explorer tree and editor tabs.
+- **Dedicated Icon Theme:** Includes the official `Brainfuck (Official)` icon theme.
+- **Status Bar Integration:** Discreet `$(circuit-board) Brainfuck Tape` button in the status bar for instant 1-click access.
 
 ---
 
@@ -64,16 +73,17 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 
 | Command | Shortcut / Location | Description |
 |---|---|---|
-| `Brainfuck: Open Visual Tape Debugger` | Editor Title Bar / Status Bar | Opens the interactive visual memory tape |
-| `Brainfuck: Run Code in Output Channel` | Editor Title Bar Button | Executes the code in the output channel |
-| `Brainfuck: Format / Indent Loops` | `Shift+Alt+F` | Indents and formats loops |
-| `Brainfuck: Minify Code` | Command Palette | Strips comments and whitespace |
+| `Brainfuck: Open Visual Tape Debugger` | Title Bar / Status Bar / Context Menu | Opens the interactive visual memory tape |
+| `Brainfuck: Run Code in Output Channel` | Title Bar / Context Menu | Executes the code in the output channel |
+| `Brainfuck: Format / Indent Loops` | `Shift+Alt+F` / Context Menu | Indents and formats loops |
+| `Brainfuck: Minify Code` | Command Palette / Context Menu | Strips comments and whitespace |
 
 ### Inside the Visual Debugger:
 - **`Space`**: Run / Pause
 - **`Right Arrow` (`→`)**: Step Next
 - **`Left Arrow` (`←`)**: Step Prev (Time-Travel Undo)
 - **`R`**: Reset tape and output
+- **`Cell: [#...]`**: Jump to specific cell index
 
 ---
 
@@ -82,6 +92,15 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `brainfuck.tapeSize`: Memory tape capacity in cells (Default: `30000`).
 - `brainfuck.cellWrapping`: 8-bit wrapping (0 - 1 = 255, 255 + 1 = 0) (Default: `true`).
 - `brainfuck.defaultRunDelayMs`: Step delay in milliseconds for visual auto-play (Default: `30ms`).
+
+---
+
+## 📂 Examples Included
+
+The repository comes with ready-to-run Brainfuck examples in the [`examples/`](examples) directory:
+- [`hello_world.bf`](examples/hello_world.bf): Standard Hello World program.
+- [`addition.bf`](examples/addition.bf): Multi-cell addition algorithm with memory walkthrough.
+- [`echo.bf`](examples/echo.bf): Character echo demonstrating interactive `,` input.
 
 ---
 
@@ -99,3 +118,9 @@ npm test
 
 # Press F5 in VS Code to launch the Extension Development Host!
 ```
+
+---
+
+## 📄 License
+
+MIT License © [Ohualtex](https://github.com/Ohualtex)
