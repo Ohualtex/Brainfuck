@@ -35,10 +35,37 @@ export function parseBrainfuck(source: string): ParseResult {
   for (let i = 0; i < source.length; i++) {
     const ch = source[i];
 
-    if (ch === '\n') {
+    if (ch === '\n' || ch === '\r') {
+      if (ch === '\n') line++;
+      col = 0;
+      continue;
+    }
+
+    // Ignore punctuation attached to words in comments (e.g. console., Hello,)
+    if ((ch === '.' || ch === ',' || ch === '+' || ch === '-') && i > 0 && /[a-zA-Z]/.test(source[i - 1])) {
+      col++;
+      continue;
+    }
+
+    // Skip line comments starting with // or ;
+    if ((ch === '/' && source[i + 1] === '/') || ch === ';') {
+      while (i < source.length && source[i] !== '\n') i++;
       line++;
       col = 0;
       continue;
+    }
+
+    // Skip [ ... ] header comment blocks where [ is followed by letters (e.g. [ Brainfuck Echo Program ... ])
+    if (ch === '[' && (instructions.length === 0 || i < 10)) {
+      let j = i + 1;
+      while (j < source.length && /\s/.test(source[j])) j++;
+      if (j < source.length && /[a-zA-Z]/.test(source[j])) {
+        while (j < source.length && source[j] !== ']') j++;
+        if (j < source.length && source[j] === ']') {
+          i = j;
+          continue;
+        }
+      }
     }
 
     if (VALID_CHARS.has(ch)) {

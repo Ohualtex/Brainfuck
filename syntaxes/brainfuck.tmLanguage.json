@@ -4,21 +4,76 @@
   "scopeName": "source.brainfuck",
   "patterns": [
     {
-      "include": "#commands"
+      "include": "#comment-block"
+    },
+    {
+      "include": "#comment-line"
     },
     {
       "include": "#comments"
+    },
+    {
+      "include": "#commands"
     }
   ],
   "repository": {
+    "comment-block": {
+      "name": "comment.block.brainfuck",
+      "begin": "\\[(?=[\\s]*[a-zA-Z])",
+      "beginCaptures": {
+        "0": {
+          "name": "comment.block.brainfuck"
+        }
+      },
+      "end": "\\]",
+      "endCaptures": {
+        "0": {
+          "name": "comment.block.brainfuck"
+        }
+      },
+      "patterns": [
+        {
+          "name": "comment.block.brainfuck",
+          "match": "[^\\]]+"
+        }
+      ]
+    },
+    "comment-line": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.brainfuck",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.line.semicolon.brainfuck",
+          "match": ";.*$"
+        },
+        {
+          "name": "comment.line.hash.brainfuck",
+          "match": "#[\\s]+.*$"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.brainfuck",
+          "match": "[a-zA-Z0-9_]+(?:[.,\\-+][a-zA-Z0-9_]+)*[.,!?:;\"'\\)]*"
+        },
+        {
+          "name": "comment.line.brainfuck",
+          "match": "[^><+\\-.,\\[\\]#\\r\\n]+"
+        }
+      ]
+    },
     "commands": {
       "patterns": [
         {
-          "name": "keyword.operator.pointer.brainfuck",
+          "name": "variable.other.constant.pointer.brainfuck",
           "match": "[><]"
         },
         {
-          "name": "keyword.operator.arithmetic.brainfuck",
+          "name": "constant.numeric.arithmetic.brainfuck",
           "match": "[+-]"
         },
         {
@@ -30,16 +85,8 @@
           "match": "[\\[\\]]"
         },
         {
-          "name": "keyword.other.debugger.brainfuck",
+          "name": "invalid.deprecated.breakpoint.brainfuck",
           "match": "#"
-        }
-      ]
-    },
-    "comments": {
-      "patterns": [
-        {
-          "name": "comment.line.brainfuck",
-          "match": "[^><+\\-.,\\[\\]#\\s]+"
         }
       ]
     }

@@ -17,9 +17,17 @@ export class BrainfuckDocumentFormattingEditProvider implements vscode.DocumentF
   }
 }
 
-export async function formatActiveDocument() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== 'brainfuck') {
+export async function formatActiveDocument(uri?: vscode.Uri) {
+  let editor = vscode.window.activeTextEditor;
+  if (uri) {
+    const uriStr = uri.toString();
+    const found = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
+    if (found) {
+      editor = found;
+    }
+  }
+
+  if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
@@ -35,9 +43,17 @@ export async function formatActiveDocument() {
   vscode.window.showInformationMessage('Brainfuck code formatted successfully.');
 }
 
-export async function minifyActiveDocument() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== 'brainfuck') {
+export async function minifyActiveDocument(uri?: vscode.Uri) {
+  let editor = vscode.window.activeTextEditor;
+  if (uri) {
+    const uriStr = uri.toString();
+    const found = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
+    if (found) {
+      editor = found;
+    }
+  }
+
+  if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }

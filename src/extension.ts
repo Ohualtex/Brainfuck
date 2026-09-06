@@ -24,26 +24,26 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 3. Register Commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('brainfuck.openVisualTape', () => {
-      TapePanel.createOrShow(context.extensionUri);
+    vscode.commands.registerCommand('brainfuck.openVisualTape', async (uri?: vscode.Uri) => {
+      await TapePanel.createOrShow(context.extensionUri, uri);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('brainfuck.run', () => {
-      runBrainfuckCode();
+    vscode.commands.registerCommand('brainfuck.run', async (uri?: vscode.Uri) => {
+      await runBrainfuckCode(uri);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('brainfuck.format', () => {
-      formatActiveDocument();
+    vscode.commands.registerCommand('brainfuck.format', async (uri?: vscode.Uri) => {
+      await formatActiveDocument(uri);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('brainfuck.minify', () => {
-      minifyActiveDocument();
+    vscode.commands.registerCommand('brainfuck.minify', async (uri?: vscode.Uri) => {
+      await minifyActiveDocument(uri);
     })
   );
 

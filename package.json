@@ -2,7 +2,7 @@
   "name": "vscode-brainfuck",
   "displayName": "Brainfuck Support & Visual Tape Debugger",
   "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "Ohualtex",
   "icon": "icon.png",
   "license": "MIT",

@@ -1,18 +1,90 @@
 import * as vscode from 'vscode';
 import { parseBrainfuck } from '../interpreter/parser';
 
+export function isBrainfuckDocument(doc?: vscode.TextDocument): boolean {
+  if (!doc) {
+    return false;
+  }
+  if (doc.languageId === 'brainfuck') {
+    return true;
+  }
+  const name = doc.fileName.toLowerCase();
+  return name.endsWith('.bf') || name.endsWith('.b');
+}
+
+export async function resolveBrainfuckDocument(uri?: vscode.Uri): Promise<{
+  doc?: vscode.TextDocument;
+  editor?: vscode.TextEditor;
+}> {
+  if (uri) {
+    const uriStr = uri.toString();
+    const visibleEditor = vscode.window.visibleTextEditors.find(
+      e => e.document.uri.toString() === uriStr
+    );
+    if (visibleEditor) {
+      return { doc: visibleEditor.document, editor: visibleEditor };
+    }
+
+    const openDoc = vscode.workspace.textDocuments.find(
+      d => d.uri.toString() === uriStr
+    );
+    if (openDoc) {
+      return { doc: openDoc };
+    }
+
+    try {
+      const loadedDoc = await vscode.workspace.openTextDocument(uri);
+      return { doc: loadedDoc };
+    } catch {
+      // ignore
+    }
+  }
+
+  const activeEditor = vscode.window.activeTextEditor;
+  if (activeEditor && isBrainfuckDocument(activeEditor.document)) {
+    return { doc: activeEditor.document, editor: activeEditor };
+  }
+
+  const visibleEditor = vscode.window.visibleTextEditors.find(e =>
+    isBrainfuckDocument(e.document)
+  );
+  if (visibleEditor) {
+    return { doc: visibleEditor.document, editor: visibleEditor };
+  }
+
+  const openDoc = vscode.workspace.textDocuments.find(d =>
+    isBrainfuckDocument(d)
+  );
+  if (openDoc) {
+    return { doc: openDoc };
+  }
+
+  if (activeEditor) {
+    return { doc: activeEditor.document, editor: activeEditor };
+  }
+
+  return {};
+}
+
 export class TapePanel {
   public static currentPanel: TapePanel | undefined;
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
+  private _currentDoc: vscode.TextDocument | undefined;
   private _currentEditor: vscode.TextEditor | undefined;
   private _activeDecorationType: vscode.TextEditorDecorationType;
 
-  public static createOrShow(extensionUri: vscode.Uri) {
+  public static async createOrShow(extensionUri: vscode.Uri, fileUri?: vscode.Uri) {
+    const { doc, editor } = await resolveBrainfuckDocument(fileUri);
+
     if (TapePanel.currentPanel) {
       TapePanel.currentPanel._panel.reveal(TapePanel.currentPanel._panel.viewColumn, true);
-      TapePanel.currentPanel.syncWithActiveEditor();
+      if (doc) {
+        TapePanel.currentPanel.loadDocument(doc, editor);
+      } else {
+        await TapePanel.currentPanel.syncWithActiveEditor(fileUri);
+      }
       return;
     }
 
@@ -27,16 +99,23 @@ export class TapePanel {
       }
     );
 
-    TapePanel.currentPanel = new TapePanel(panel, extensionUri);
+    TapePanel.currentPanel = new TapePanel(panel, extensionUri, doc, editor);
   }
 
   public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     TapePanel.currentPanel = new TapePanel(panel, extensionUri);
   }
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    initialDoc?: vscode.TextDocument,
+    initialEditor?: vscode.TextEditor
+  ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
+    this._currentDoc = initialDoc;
+    this._currentEditor = initialEditor;
 
     this._panel.webview.options = {
       enableScripts: true,
@@ -49,7 +128,7 @@ export class TapePanel {
       borderRadius: '2px'
     });
 
-    this._update();
+    this._update(initialDoc);
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -58,7 +137,11 @@ export class TapePanel {
       message => {
         switch (message.type) {
           case 'ready':
-            this.syncWithActiveEditor();
+            if (this._currentDoc) {
+              this.loadDocument(this._currentDoc, this._currentEditor);
+            } else {
+              this.syncWithActiveEditor();
+            }
             break;
           case 'highlightInstruction':
             this.highlightInstruction(message.sourceOffset);
@@ -81,9 +164,8 @@ export class TapePanel {
     // Track active editor changes
     vscode.window.onDidChangeActiveTextEditor(
       editor => {
-        if (editor && editor.document.languageId === 'brainfuck') {
-          this._currentEditor = editor;
-          this.syncWithActiveEditor();
+        if (editor && isBrainfuckDocument(editor.document)) {
+          this.loadDocument(editor.document, editor);
         }
       },
       null,
@@ -93,49 +175,57 @@ export class TapePanel {
     // Track document edits
     vscode.workspace.onDidChangeTextDocument(
       e => {
-        if (this._currentEditor && e.document === this._currentEditor.document) {
-          this.syncWithActiveEditor();
+        if (this._currentDoc && e.document.uri.toString() === this._currentDoc.uri.toString()) {
+          this.loadDocument(e.document, this._currentEditor);
         }
       },
       null,
       this._disposables
     );
 
-    this.syncWithActiveEditor();
+    if (initialDoc) {
+      this.loadDocument(initialDoc, initialEditor);
+    } else {
+      this.syncWithActiveEditor();
+    }
   }
 
-  public syncWithActiveEditor() {
-    const editor = vscode.window.activeTextEditor
-      || this._currentEditor
-      || vscode.window.visibleTextEditors.find(e => e.document.languageId === 'brainfuck');
-
-    let doc: vscode.TextDocument | undefined = editor?.document;
-    if (!doc) {
-      doc = vscode.workspace.textDocuments.find(d => d.languageId === 'brainfuck');
+  public loadDocument(doc: vscode.TextDocument, editor?: vscode.TextEditor) {
+    this._currentDoc = doc;
+    if (editor) {
+      this._currentEditor = editor;
+    } else {
+      this._currentEditor = vscode.window.visibleTextEditors.find(
+        e => e.document.uri.toString() === doc.uri.toString()
+      );
     }
 
+    const text = doc.getText();
+    const fileName = doc.fileName.split(/[\\/]/).pop() || 'Untitled.bf';
+    const autoStep = 0;
+    this._panel.webview.postMessage({
+      type: 'loadCode',
+      code: text,
+      fileName,
+      autoStep
+    });
+  }
+
+  public async syncWithActiveEditor(fileUri?: vscode.Uri) {
+    const { doc, editor } = await resolveBrainfuckDocument(fileUri);
     if (doc) {
-      if (editor) {
-        this._currentEditor = editor;
-      }
-      const text = doc.getText();
-      const fileName = doc.fileName.split(/[\\/]/).pop() || 'Untitled.bf';
-      const autoStep = fileName.includes('hello_world') ? 853 : 0;
-      this._panel.webview.postMessage({
-        type: 'loadCode',
-        code: text,
-        fileName,
-        autoStep
-      });
+      this.loadDocument(doc, editor);
     }
   }
 
   private highlightInstruction(sourceOffset: number) {
     let editor = this._currentEditor;
     if (!editor || editor.document.isClosed) {
-      editor = vscode.window.visibleTextEditors.find(e => e.document.languageId === 'brainfuck')
-        || vscode.window.activeTextEditor;
-      if (editor && editor.document.languageId === 'brainfuck') {
+      const targetUriStr = this._currentDoc?.uri.toString();
+      editor = vscode.window.visibleTextEditors.find(e =>
+        targetUriStr ? e.document.uri.toString() === targetUriStr : isBrainfuckDocument(e.document)
+      ) || vscode.window.activeTextEditor;
+      if (editor && isBrainfuckDocument(editor.document)) {
         this._currentEditor = editor;
       }
     }
@@ -175,9 +265,8 @@ export class TapePanel {
     }
   }
 
-  private _update() {
-    const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors.find(e => e.document.languageId === 'brainfuck');
-    const doc = editor?.document || vscode.workspace.textDocuments.find(d => d.languageId === 'brainfuck');
+  private _update(targetDoc?: vscode.TextDocument) {
+    const doc = targetDoc || this._currentDoc || vscode.window.activeTextEditor?.document || vscode.workspace.textDocuments.find(isBrainfuckDocument);
     const defaultCode = `[
   Brainfuck Hello World
   Prints "Hello World!" to the output console.
@@ -453,29 +542,86 @@ export class TapePanel {
       gap: 8px;
       font-size: 11px;
       color: var(--text-secondary);
+      user-select: none;
     }
 
     .slider-group input[type="range"] {
       -webkit-appearance: none;
-      width: 100px;
-      height: 4px;
-      background: #3c3c3c;
-      border-radius: 2px;
+      appearance: none;
+      width: 220px;
+      min-width: 140px;
+      height: 24px;
+      background: transparent;
+      cursor: pointer;
       outline: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      background: #3c3c3c;
+      border-radius: 3px;
+      border: none;
     }
 
     .slider-group input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
+      appearance: none;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      background: var(--accent-primary);
+      background: var(--accent-primary, #0078d4);
+      margin-top: -4px;
       cursor: pointer;
-      transition: background 0.1s;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
     .slider-group input[type="range"]::-webkit-slider-thumb:hover {
-      background: var(--accent-hover);
+      background: var(--accent-hover, #026ec1);
+      transform: scale(1.15);
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.25);
+    }
+
+    .speed-label {
+      font-family: var(--font-mono);
+      min-width: 44px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .speed-label:hover {
+      background: var(--vscode-button-secondaryHoverBackground, #45494e);
+      border-color: var(--accent-primary, #0078d4);
+      color: #ffffff;
+    }
+
+    .speed-input-edit {
+      width: 58px;
+      height: 22px;
+      padding: 0 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      background: var(--bg-input, #3c3c3c);
+      color: var(--text-primary, #cccccc);
+      border: 1px solid var(--accent-primary, #0078d4);
+      border-radius: 4px;
+      outline: none;
+      box-sizing: border-box;
     }
 
     /* INSTRUCTION STREAM */
@@ -555,6 +701,8 @@ export class TapePanel {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .tape-title {
@@ -568,27 +716,49 @@ export class TapePanel {
       gap: 8px;
     }
 
-    .tape-jump {
+    .cell-jump-group {
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      user-select: none;
     }
 
-    .tape-jump input {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      padding: 4px 8px;
+    .cell-label {
+      font-family: var(--font-mono);
+      min-width: 44px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 8px;
       border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }
+
+    .cell-label:hover {
+      background: var(--vscode-button-secondaryHoverBackground, #45494e);
+      border-color: var(--accent-primary, #0078d4);
+      color: #ffffff;
+    }
+
+    .cell-input-edit {
+      width: 65px;
+      height: 22px;
+      padding: 0 4px;
       font-family: var(--font-mono);
       font-size: 11px;
-      width: 80px;
+      font-weight: 600;
       text-align: center;
+      background: var(--bg-input, #3c3c3c);
+      color: var(--text-primary, #cccccc);
+      border: 1px solid var(--accent-primary, #0078d4);
+      border-radius: 4px;
       outline: none;
-    }
-
-    .tape-jump input:focus {
-      border-color: var(--accent-focus);
+      box-sizing: border-box;
     }
 
     .tape-conveyor {
@@ -703,59 +873,6 @@ export class TapePanel {
       transition: width 0.15s ease;
     }
 
-    /* I/O PANELS */
-    .io-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    .io-box {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .io-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-muted);
-    }
-
-    .io-input, .io-terminal {
-      width: 100%;
-      height: 84px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 8px 10px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--text-primary);
-      outline: none;
-      resize: none;
-    }
-
-    .io-input:focus {
-      border-color: var(--accent-focus);
-    }
-
-    .io-terminal {
-      background: #181818;
-      color: var(--text-primary);
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
   </style>
 </head>
 <body>
@@ -779,6 +896,10 @@ export class TapePanel {
         <span class="stat-val" id="statVal">0 (0x00) '.'</span>
       </div>
       <div class="stat-pill">
+        <span class="stat-label">Output</span>
+        <span class="stat-val" id="statOutput" style="color: #4ade80; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Program output string">-</span>
+      </div>
+      <div class="stat-pill">
         <span class="stat-label">Steps</span>
         <span class="stat-val" id="statSteps">0</span>
       </div>
@@ -796,15 +917,10 @@ export class TapePanel {
     </div>
 
     <div class="slider-group">
-      <span>Speed:</span>
-      <input type="range" id="speedSlider" min="1" max="250" value="30" title="Execution Delay">
-      <span id="speedLabel" style="font-family: var(--font-mono); width: 48px;">30ms</span>
-    </div>
-
-    <div class="tape-jump">
-      <span style="color: var(--text-muted); font-size: 11px;">Jump Cell:</span>
-      <input type="number" id="jumpCellInput" min="0" max="29999" placeholder="Index...">
-      <button id="btnJump">Go</button>
+      <span>Delay:</span>
+      <input type="range" id="speedSlider" min="1" max="1000" value="30" title="Execution delay per step (1 - 1000ms)">
+      <span id="speedLabel" class="speed-label" title="Click to manually edit delay (1 - 1000ms)">30ms</span>
+      <input type="number" id="speedInput" class="speed-input-edit" min="1" max="1000" style="display: none;" title="Enter delay in ms">
     </div>
   </div>
 
@@ -824,31 +940,14 @@ export class TapePanel {
     <div class="tape-header">
       <div class="tape-title">
         <span>Memory Tape</span>
-        <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">(30,000 Cells)</span>
       </div>
-      <div style="font-size: 11px; color: var(--text-secondary);">
-        Click any cell to edit its value directly
+      <div class="cell-jump-group">
+        <span>Cell:</span>
+        <span id="cellLabel" class="cell-label" title="Click to jump to cell (0 - 29999)">#0</span>
+        <input type="number" id="cellInput" class="cell-input-edit" min="0" max="29999" style="display: none;" title="Enter cell index (0 - 29999)">
       </div>
     </div>
     <div class="tape-conveyor" id="tapeConveyor"></div>
-  </div>
-
-  <!-- I/O CONSOLE -->
-  <div class="io-grid">
-    <div class="io-box">
-      <div class="io-header">
-        <span>Input Buffer</span>
-        <span style="font-size: 10px; color: var(--text-secondary);">Used for ',' instruction</span>
-      </div>
-      <textarea class="io-input" id="inputBox" placeholder="Enter program input..."></textarea>
-    </div>
-    <div class="io-box">
-      <div class="io-header">
-        <span>Output Console</span>
-        <button style="padding: 2px 8px; font-size: 10px;" id="btnClearOutput">Clear</button>
-      </div>
-      <div class="io-terminal" id="terminalOutput"></div>
-    </div>
   </div>
 
   <script id="bf-initial-data" type="application/json">${initialJson}</script>
@@ -870,7 +969,7 @@ export class TapePanel {
     let stepDelay = 30;
 
     // View Window: Number of cells visible around pointer
-    const VISIBLE_CELL_WINDOW = 35;
+    const VISIBLE_CELL_WINDOW = 50;
     let currentWindowStart = 0;
     let editingCell = null;
 
@@ -886,14 +985,14 @@ export class TapePanel {
     const btnReset = document.getElementById('btnReset');
     const speedSlider = document.getElementById('speedSlider');
     const speedLabel = document.getElementById('speedLabel');
+    const speedInput = document.getElementById('speedInput');
     const streamWrapper = document.getElementById('streamWrapper');
     const streamCounter = document.getElementById('streamCounter');
     const tapeConveyor = document.getElementById('tapeConveyor');
-    const inputBox = document.getElementById('inputBox');
-    const terminalOutput = document.getElementById('terminalOutput');
-    const btnClearOutput = document.getElementById('btnClearOutput');
-    const jumpCellInput = document.getElementById('jumpCellInput');
-    const btnJump = document.getElementById('btnJump');
+    const statOutput = document.getElementById('statOutput');
+    const cellLabel = document.getElementById('cellLabel');
+    const cellInput = document.getElementById('cellInput');
+    let isEditingCellJump = false;
 
     // Parse Brainfuck locally for high performance
     function parseCode(src) {
@@ -904,12 +1003,42 @@ export class TapePanel {
       let col = 0;
 
       for (let i = 0; i < src.length; i++) {
+        const code = src.charCodeAt(i);
+        if (code === 10 || code === 13) {
+          if (code === 10) line++;
+          col = 0;
+          continue;
+        }
+
         const ch = src[i];
-        if (ch === '\\n') {
+
+        // Ignore punctuation attached to words in comments (e.g. console., Hello,)
+        if ((ch === '.' || ch === ',' || ch === '+' || ch === '-') && i > 0 && /[a-zA-Z]/.test(src[i - 1])) {
+          col++;
+          continue;
+        }
+
+        // Skip line comments starting with // or ;
+        if ((ch === '/' && src[i + 1] === '/') || ch === ';') {
+          while (i < src.length && src.charCodeAt(i) !== 10) i++;
           line++;
           col = 0;
           continue;
         }
+
+        // Skip [ ... ] header comment blocks where [ is followed by letters (e.g. [ Brainfuck Echo Program ... ])
+        if (ch === '[' && (list.length === 0 || i < 10)) {
+          let j = i + 1;
+          while (j < src.length && src.charCodeAt(j) <= 32) j++;
+          if (j < src.length && /[a-zA-Z]/.test(src[j])) {
+            while (j < src.length && src[j] !== ']') j++;
+            if (j < src.length && src[j] === ']') {
+              i = j;
+              continue;
+            }
+          }
+        }
+
         if (valid.has(ch)) {
           const item = { char: ch, index: list.length, offset: i, line, col, jumpTarget: -1 };
           list.push(item);
@@ -962,7 +1091,8 @@ export class TapePanel {
         const item = instructions[i];
         const isCur = (i === ip);
         const catClass = getCharCategoryClass(item.char);
-        html += '<div class="instr-chip ' + (isCur ? 'current ' : '') + catClass + '" data-idx="' + i + '">' + item.char + '</div>';
+        const disp = item.char === '<' ? '&lt;' : (item.char === '>' ? '&gt;' : item.char);
+        html += '<div class="instr-chip ' + (isCur ? 'current ' : '') + catClass + '" data-idx="' + i + '">' + disp + '</div>';
       }
 
       if (end < instructions.length) {
@@ -1000,9 +1130,12 @@ export class TapePanel {
         const hex = '0x' + val.toString(16).padStart(2, '0').toUpperCase();
         let chr = '.';
         if (val >= 32 && val <= 126) {
-          chr = String.fromCharCode(val);
+          if (val === 60) chr = '&lt;';
+          else if (val === 62) chr = '&gt;';
+          else if (val === 38) chr = '&amp;';
+          else chr = String.fromCharCode(val);
         } else if (val === 10) {
-          chr = '\\\\n';
+          chr = 'LF';
         } else if (val === 0) {
           chr = 'NUL';
         }
@@ -1082,6 +1215,9 @@ export class TapePanel {
     function updateUI() {
       // Stats
       statPtr.textContent = '#' + ptr;
+      if (!isEditingCellJump && cellLabel) {
+        cellLabel.textContent = '#' + ptr;
+      }
       const currentVal = memory[ptr];
       const hex = '0x' + currentVal.toString(16).padStart(2, '0').toUpperCase();
       let chr = '.';
@@ -1118,11 +1254,10 @@ export class TapePanel {
       }
     }
 
-    function stepForward() {
+    function executeOneStep() {
       if (ip >= instructions.length) {
         state = 'TERMINATED';
         pause();
-        updateUI();
         return false;
       }
 
@@ -1159,22 +1294,14 @@ export class TapePanel {
           break;
         case '.':
           output += String.fromCharCode(memory[ptr]);
-          terminalOutput.textContent = output;
-          terminalOutput.scrollTop = terminalOutput.scrollHeight;
+          statOutput.textContent = output.split(String.fromCharCode(10)).join('↵') || '-';
+          statOutput.title = output;
           ip++;
           break;
         case ',':
-          const currentInput = inputBox.value;
-          if (currentInput.length > 0) {
-            memory[ptr] = currentInput.charCodeAt(0) & 0xff;
-            inputBox.value = currentInput.substring(1);
-            ip++;
-          } else {
-            state = 'WAITING_INPUT';
-            pause();
-            updateUI();
-            return false;
-          }
+          // Visual inspection mode: comma yields 0 (EOF) so programs execute cleanly
+          memory[ptr] = 0;
+          ip++;
           break;
         case '[':
           if (memory[ptr] === 0) {
@@ -1183,7 +1310,6 @@ export class TapePanel {
             } else {
               state = 'ERROR';
               pause();
-              updateUI();
               return false;
             }
           } else {
@@ -1197,7 +1323,6 @@ export class TapePanel {
             } else {
               state = 'ERROR';
               pause();
-              updateUI();
               return false;
             }
           } else {
@@ -1208,8 +1333,7 @@ export class TapePanel {
           ip++;
           state = 'PAUSED';
           pause();
-          updateUI();
-          return true;
+          return false;
         default:
           ip++;
           break;
@@ -1219,14 +1343,20 @@ export class TapePanel {
       if (ip >= instructions.length) {
         state = 'TERMINATED';
         pause();
+        return false;
       } else {
         if (state !== 'WAITING_INPUT' && state !== 'ERROR') {
           state = isRunning ? 'RUNNING' : 'PAUSED';
         }
       }
 
-      updateUI();
       return true;
+    }
+
+    function stepForward() {
+      const result = executeOneStep();
+      updateUI();
+      return result;
     }
 
     function stepBackward() {
@@ -1236,17 +1366,31 @@ export class TapePanel {
       ptr = snap.ptr;
       memory[snap.ptr] = snap.cellVal;
       output = output.substring(0, snap.outLen);
-      terminalOutput.textContent = output;
+      statOutput.textContent = output.split(String.fromCharCode(10)).join('↵') || '-';
+      statOutput.title = output;
       stepCount = Math.max(0, stepCount - 1);
       state = 'PAUSED';
       updateUI();
     }
 
     function runLoop() {
-      if (!isRunning) return;
-      const success = stepForward();
-      if (success && isRunning && state === 'RUNNING') {
-        runTimer = setTimeout(runLoop, stepDelay);
+      if (!isRunning || state !== 'RUNNING') return;
+
+      const batchSize = stepDelay < 20 ? Math.max(1, Math.floor(20 / stepDelay)) : 1;
+      const tickDelay = stepDelay < 20 ? Math.max(16, batchSize * stepDelay) : stepDelay;
+
+      let keepRunning = true;
+      for (let i = 0; i < batchSize; i++) {
+        keepRunning = executeOneStep();
+        if (!keepRunning || !isRunning || state !== 'RUNNING') {
+          break;
+        }
+      }
+
+      updateUI();
+
+      if (keepRunning && isRunning && state === 'RUNNING') {
+        runTimer = setTimeout(runLoop, tickDelay);
       }
     }
 
@@ -1280,7 +1424,8 @@ export class TapePanel {
       output = '';
       stepCount = 0;
       history = [];
-      terminalOutput.textContent = '';
+      statOutput.textContent = '-';
+      statOutput.title = '';
       state = 'READY';
       vscode.postMessage({ type: 'clearHighlight' });
       updateUI();
@@ -1304,36 +1449,124 @@ export class TapePanel {
 
     btnReset.addEventListener('click', reset);
 
-    btnClearOutput.addEventListener('click', () => {
-      output = '';
-      terminalOutput.textContent = '';
+    function updateSpeed(val) {
+      let parsed = parseInt(val, 10);
+      if (isNaN(parsed) || parsed < 1) {
+        parsed = 1;
+      } else if (parsed > 1000) {
+        parsed = 1000;
+      }
+      stepDelay = parsed;
+      speedSlider.value = parsed;
+      speedLabel.textContent = parsed + 'ms';
+      if (speedInput && document.activeElement !== speedInput) {
+        speedInput.value = parsed;
+      }
+      if (isRunning && state === 'RUNNING') {
+        if (runTimer) {
+          clearTimeout(runTimer);
+          runTimer = null;
+        }
+        runTimer = setTimeout(runLoop, stepDelay < 20 ? 0 : stepDelay);
+      }
+    }
+
+    speedSlider.addEventListener('input', () => updateSpeed(speedSlider.value));
+    speedSlider.addEventListener('change', () => updateSpeed(speedSlider.value));
+
+    // Manual input toggle on speedLabel click
+    speedLabel.addEventListener('click', () => {
+      speedLabel.style.display = 'none';
+      speedInput.style.display = 'inline-block';
+      speedInput.value = stepDelay;
+      speedInput.focus();
+      speedInput.select();
     });
 
-    speedSlider.addEventListener('input', e => {
-      stepDelay = parseInt(e.target.value, 10);
-      speedLabel.textContent = stepDelay + 'ms';
-    });
+    const commitSpeedEdit = () => {
+      if (speedInput.style.display !== 'none') {
+        updateSpeed(speedInput.value);
+        speedInput.style.display = 'none';
+        speedLabel.style.display = 'inline-block';
+      }
+    };
 
-    btnJump.addEventListener('click', () => {
-      const target = parseInt(jumpCellInput.value, 10);
-      if (!isNaN(target) && target >= 0 && target < TAPE_SIZE) {
-        ptr = target;
-        updateUI();
+    speedInput.addEventListener('input', () => {
+      const val = parseInt(speedInput.value, 10);
+      if (!isNaN(val) && val >= 1 && val <= 1000) {
+        stepDelay = val;
+        speedSlider.value = val;
+        speedLabel.textContent = val + 'ms';
+        if (isRunning && state === 'RUNNING') {
+          if (runTimer) {
+            clearTimeout(runTimer);
+            runTimer = null;
+          }
+          runTimer = setTimeout(runLoop, stepDelay < 20 ? 0 : stepDelay);
+        }
       }
     });
 
-    jumpCellInput.addEventListener('keydown', e => {
+    speedInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        btnJump.click();
+        commitSpeedEdit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        speedInput.style.display = 'none';
+        speedLabel.style.display = 'inline-block';
       }
     });
 
-    inputBox.addEventListener('input', () => {
-      if (state === 'WAITING_INPUT' && inputBox.value.length > 0) {
-        state = 'PAUSED';
-        updateUI();
+    speedInput.addEventListener('blur', () => {
+      commitSpeedEdit();
+    });
+
+    function jumpToCell(val) {
+      let parsed = parseInt(val, 10);
+      if (isNaN(parsed)) {
+        parsed = ptr;
+      } else if (parsed < 0) {
+        parsed = 0;
+      } else if (parsed >= TAPE_SIZE) {
+        parsed = TAPE_SIZE - 1;
       }
+      ptr = parsed;
+      updateUI();
+    }
+
+    cellLabel.addEventListener('click', () => {
+      isEditingCellJump = true;
+      cellLabel.style.display = 'none';
+      cellInput.style.display = 'inline-block';
+      cellInput.value = ptr;
+      cellInput.focus();
+      cellInput.select();
+    });
+
+    const commitCellJump = () => {
+      if (isEditingCellJump) {
+        jumpToCell(cellInput.value);
+        isEditingCellJump = false;
+        cellInput.style.display = 'none';
+        cellLabel.style.display = 'inline-block';
+      }
+    };
+
+    cellInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitCellJump();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        isEditingCellJump = false;
+        cellInput.style.display = 'none';
+        cellLabel.style.display = 'inline-block';
+      }
+    });
+
+    cellInput.addEventListener('blur', () => {
+      commitCellJump();
     });
 
     // Keyboard Shortcuts
@@ -1388,11 +1621,10 @@ export class TapePanel {
       fileNameBadge.textContent = initialFileName;
       instructions = parseCode(initialCode);
       reset();
-      const autoStep = initialFileName.includes('hello_world') ? 853 : 0;
+      const autoStep = 0;
       for (let s = 0; s < autoStep && ip < instructions.length; s++) {
         stepForward();
       }
-      state = 'PAUSED';
       updateUI();
     } else {
       updateUI();

@@ -11,9 +11,29 @@ export function getOutputChannel(): vscode.OutputChannel {
   return outputChannel;
 }
 
-export async function runBrainfuckCode() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== 'brainfuck') {
+export async function runBrainfuckCode(uri?: vscode.Uri) {
+  let doc: vscode.TextDocument | undefined;
+  if (uri) {
+    const uriStr = uri.toString();
+    const visible = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
+    doc = visible?.document || vscode.workspace.textDocuments.find(d => d.uri.toString() === uriStr);
+    if (!doc) {
+      try {
+        doc = await vscode.workspace.openTextDocument(uri);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  if (!doc) {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && (editor.document.languageId === 'brainfuck' || editor.document.fileName.endsWith('.bf') || editor.document.fileName.endsWith('.b'))) {
+      doc = editor.document;
+    }
+  }
+
+  if (!doc) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file to run.');
     return;
   }
