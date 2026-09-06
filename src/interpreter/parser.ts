@@ -56,7 +56,7 @@ export function parseBrainfuck(source: string): ParseResult {
       } else if (ch === ']') {
         if (bracketStack.length === 0) {
           errors.push({
-            message: 'Eşleşmeyen kapanış parantezi: Önce gelen bir "[" yok.',
+            message: 'Unmatched closing bracket: No matching "[" found.',
             line,
             col,
             offset: i,
@@ -72,7 +72,7 @@ export function parseBrainfuck(source: string): ParseResult {
           // Check for empty loop warning: []
           if (instr.index === openInstr.index + 1) {
             errors.push({
-              message: 'İçi boş döngü "[]": Hücre değeri 0 değilse sonsuz döngüye sebep olabilir.',
+              message: 'Empty loop "[]": May cause an infinite loop if cell value is non-zero.',
               line: openInstr.line,
               col: openInstr.col,
               offset: openInstr.sourceOffset,
@@ -90,7 +90,7 @@ export function parseBrainfuck(source: string): ParseResult {
   while (bracketStack.length > 0) {
     const unclosed = bracketStack.pop()!;
     errors.push({
-      message: 'Kapatılmamış döngü parantezi: Eşleşen "]" bulunamadı.',
+      message: 'Unclosed loop bracket: No matching "]" found.',
       line: unclosed.line,
       col: unclosed.col,
       offset: unclosed.sourceOffset,

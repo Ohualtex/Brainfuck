@@ -19,7 +19,7 @@ export function updateDiagnostics(
       new vscode.Position(err.line, err.col + (err.length || 1))
     );
 
-    const severity = err.message.includes('İçi boş döngü')
+    const severity = err.message.includes('Empty loop')
       ? vscode.DiagnosticSeverity.Warning
       : vscode.DiagnosticSeverity.Error;
 

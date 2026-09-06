@@ -178,7 +178,7 @@ export class BrainfuckEngine {
             this.ip = instr.jumpTarget + 1;
           } else {
             this.state = ExecutionState.ERROR;
-            this.errorMessage = 'Eşleşen kapanış parantezi bulunamadı.';
+            this.errorMessage = 'No matching closing bracket found.';
             return false;
           }
         } else {
@@ -193,7 +193,7 @@ export class BrainfuckEngine {
             this.ip = instr.jumpTarget + 1;
           } else {
             this.state = ExecutionState.ERROR;
-            this.errorMessage = 'Eşleşen açılış parantezi bulunamadı.';
+            this.errorMessage = 'No matching opening bracket found.';
             return false;
           }
         } else {
