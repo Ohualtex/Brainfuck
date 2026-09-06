@@ -14,17 +14,17 @@ export function getOutputChannel(): vscode.OutputChannel {
 export async function runBrainfuckCode() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'brainfuck') {
-    vscode.window.showInformationMessage('Lütfen çalıştırmak için bir Brainfuck dosyası (.bf) açın.');
+    vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file to run.');
     return;
   }
 
   const source = editor.document.getText();
   const parseResult = parseBrainfuck(source);
 
-  const errors = parseResult.errors.filter(e => !e.message.includes('İçi boş döngü'));
+  const errors = parseResult.errors.filter(e => !e.message.includes('Empty loop'));
   if (errors.length > 0) {
     vscode.window.showErrorMessage(
-      `Kod çalıştırılamadı! ${errors.length} sözdizimi hatası bulundu: ${errors[0].message} (Satır ${errors[0].line + 1})`
+      `Execution failed! ${errors.length} syntax error(s) found: ${errors[0].message} (Line ${errors[0].line + 1})`
     );
     return;
   }
@@ -34,8 +34,8 @@ export async function runBrainfuckCode() {
   let userInput = '';
   if (hasInput) {
     const input = await vscode.window.showInputBox({
-      prompt: 'Program girdi bekliyor (","). Lütfen girdi metnini yazın:',
-      placeHolder: 'Girdi (boş bırakabilirsiniz)...'
+      prompt: 'Program expects input (","). Enter input text:',
+      placeHolder: 'Input (can be left blank)...'
     });
     if (input === undefined) {
       // User cancelled
@@ -46,7 +46,7 @@ export async function runBrainfuckCode() {
 
   const channel = getOutputChannel();
   channel.show(true);
-  channel.appendLine(`\n[${new Date().toLocaleTimeString()}] Brainfuck programı başlatılıyor...`);
+  channel.appendLine(`\n[${new Date().toLocaleTimeString()}] Starting Brainfuck execution...`);
   channel.appendLine('----------------------------------------------------');
 
   const config = vscode.workspace.getConfiguration('brainfuck');
@@ -77,17 +77,17 @@ export async function runBrainfuckCode() {
   if (engine.output.length > 0) {
     channel.appendLine(engine.output);
   } else {
-    channel.appendLine('(Program herhangi bir çıktı üretmedi)');
+    channel.appendLine('(Program produced no output)');
   }
 
   channel.appendLine('----------------------------------------------------');
   if (steps >= maxSteps) {
-    channel.appendLine(`[UYARI] Program ${maxSteps} adım sınırına ulaştı ve durduruldu (Olası sonsuz döngü).`);
+    channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
   } else if (engine.state === ExecutionState.ERROR) {
-    channel.appendLine(`[HATA] ${engine.errorMessage}`);
+    channel.appendLine(`[ERROR] ${engine.errorMessage}`);
   } else {
     channel.appendLine(
-      `[BAŞARILI] Tamamlandı: ${steps} adım | ${durationMs} ms | Aktif Hücre: ${engine.ptr} | Hücre Değeri: ${engine.memory[engine.ptr]}`
+      `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
     );
   }
 }

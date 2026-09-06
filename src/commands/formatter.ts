@@ -20,7 +20,7 @@ export class BrainfuckDocumentFormattingEditProvider implements vscode.DocumentF
 export async function formatActiveDocument() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'brainfuck') {
-    vscode.window.showInformationMessage('Lütfen aktif bir Brainfuck (.bf) dosyası açın.');
+    vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
 
@@ -32,13 +32,13 @@ export async function formatActiveDocument() {
     editBuilder.replace(fullRange, formatted);
   });
 
-  vscode.window.showInformationMessage('Brainfuck kodu biçimlendirildi.');
+  vscode.window.showInformationMessage('Brainfuck code formatted successfully.');
 }
 
 export async function minifyActiveDocument() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'brainfuck') {
-    vscode.window.showInformationMessage('Lütfen aktif bir Brainfuck (.bf) dosyası açın.');
+    vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
 
@@ -50,5 +50,5 @@ export async function minifyActiveDocument() {
     editBuilder.replace(fullRange, minified);
   });
 
-  vscode.window.showInformationMessage('Brainfuck kodu minifiye edildi (yorumlar ve boşluklar temizlendi).');
+  vscode.window.showInformationMessage('Brainfuck code minified (comments and whitespace removed).');
 }
