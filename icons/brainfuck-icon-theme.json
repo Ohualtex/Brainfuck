@@ -1,0 +1,14 @@
+{
+  "iconDefinitions": {
+    "_brainfuck": {
+      "iconPath": "./brainfuck-file-icon.svg"
+    }
+  },
+  "fileExtensions": {
+    "bf": "_brainfuck",
+    "b": "_brainfuck"
+  },
+  "languageIds": {
+    "brainfuck": "_brainfuck"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Transparent background, pure glyphs -->
+  <!-- Pointer > in vibrant cyan -->
+  <path d="M 4 8.5 L 14.5 16 L 4 23.5" fill="none" stroke="#38bdf8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Increment + in neon emerald -->
+  <path d="M 17.5 16 L 28.5 16 M 23 10.5 L 23 21.5" fill="none" stroke="#4ade80" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
