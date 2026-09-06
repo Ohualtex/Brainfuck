@@ -10,10 +10,8 @@ export class TapePanel {
   private _activeDecorationType: vscode.TextEditorDecorationType;
 
   public static createOrShow(extensionUri: vscode.Uri) {
-    const column = vscode.ViewColumn.Beside;
-
     if (TapePanel.currentPanel) {
-      TapePanel.currentPanel._panel.reveal(column);
+      TapePanel.currentPanel._panel.reveal(TapePanel.currentPanel._panel.viewColumn, true);
       TapePanel.currentPanel.syncWithActiveEditor();
       return;
     }
@@ -21,7 +19,7 @@ export class TapePanel {
     const panel = vscode.window.createWebviewPanel(
       'brainfuckTapeVisualizer',
       'Brainfuck: Visual Memory Tape',
-      column,
+      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
       {
         enableScripts: true,
         retainContextWhenHidden: true,
@@ -64,6 +62,9 @@ export class TapePanel {
             break;
           case 'highlightInstruction':
             this.highlightInstruction(message.sourceOffset);
+            break;
+          case 'clearHighlight':
+            this.clearHighlight();
             break;
           case 'info':
             vscode.window.showInformationMessage(message.text);
@@ -152,8 +153,18 @@ export class TapePanel {
     editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
   }
 
+  public clearHighlight() {
+    if (this._currentEditor && !this._currentEditor.document.isClosed) {
+      this._currentEditor.setDecorations(this._activeDecorationType, []);
+    }
+    for (const editor of vscode.window.visibleTextEditors) {
+      editor.setDecorations(this._activeDecorationType, []);
+    }
+  }
+
   public dispose() {
     TapePanel.currentPanel = undefined;
+    this.clearHighlight();
     this._activeDecorationType.dispose();
     this._panel.dispose();
     while (this._disposables.length) {
@@ -1096,12 +1107,14 @@ export class TapePanel {
         activeCard.scrollIntoView({ behavior: isRunning ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
       }
 
-      // Notify editor to highlight current instruction
-      if (instructions[ip]) {
+      // Notify editor to highlight current instruction when executing
+      if (instructions[ip] && (stepCount > 0 || state === 'RUNNING' || state === 'PAUSED')) {
         vscode.postMessage({
           type: 'highlightInstruction',
           sourceOffset: instructions[ip].offset
         });
+      } else if (stepCount === 0 && state === 'READY') {
+        vscode.postMessage({ type: 'clearHighlight' });
       }
     }
 
@@ -1269,6 +1282,7 @@ export class TapePanel {
       history = [];
       terminalOutput.textContent = '';
       state = 'READY';
+      vscode.postMessage({ type: 'clearHighlight' });
       updateUI();
     }
 
