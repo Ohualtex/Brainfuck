@@ -1,7 +1,7 @@
 {
   "name": "vscode-brainfuck",
   "displayName": "Brainfuck Support & Visual Tape Debugger",
-  "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive cyberpunk-styled memory tape visualizer.",
+  "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive memory tape visualizer.",
   "version": "0.1.0",
   "publisher": "ohualtex",
   "license": "MIT",
@@ -26,7 +26,9 @@
     "visualizer"
   ],
   "activationEvents": [
-    "onLanguage:brainfuck"
+    "onLanguage:brainfuck",
+    "onWebviewPanel:brainfuckTapeVisualizer",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -135,6 +137,11 @@
           "type": "number",
           "default": 30,
           "description": "Default execution delay (ms) per instruction in visual tape auto-run."
+        },
+        "brainfuck.autoOpenVisualTape": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the Visual Memory Tape debugger when a Brainfuck file is opened."
         }
       }
     }
