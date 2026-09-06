@@ -1,6 +1,8 @@
 # VS Code Brainfuck Language Support & Visual Tape Debugger
 
-A modern, feature-rich, and visually polished **Brainfuck** development environment for Visual Studio Code.
+> **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
+
+A standalone, batteries-included development environment for Visual Studio Code. Write, format, lint, run, and visually debug Brainfuck programs with zero external compilers, runtimes, or configurations required.
 
 ![Brainfuck Visual Tape Debugger](https://raw.githubusercontent.com/Ohualtex/vscode-brainfuck/main/docs/preview.png)
 
@@ -52,13 +54,17 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `bf-add` / `bf-sub`: Addition and subtraction between cells.
 - `bf-mult`: Multiplication loop template.
 
+### 7. 🎛️ Explorer Icons & Status Bar Integration
+- **Explorer File Icon:** Branded `>+` badge icon for `.bf` and `.b` files in the VS Code explorer tree.
+- **Status Bar Toggle:** Discreet `$(circuit-board) Brainfuck Tape` button in the status bar for instant 1-click access.
+
 ---
 
 ## ⌨️ Shortcuts & Commands
 
 | Command | Shortcut / Location | Description |
 |---|---|---|
-| `Brainfuck: Open Visual Tape Debugger` | Editor Title Bar Button | Opens the interactive visual memory tape |
+| `Brainfuck: Open Visual Tape Debugger` | Editor Title Bar / Status Bar | Opens the interactive visual memory tape |
 | `Brainfuck: Run Code in Output Channel` | Editor Title Bar Button | Executes the code in the output channel |
 | `Brainfuck: Format / Indent Loops` | `Shift+Alt+F` | Indents and formats loops |
 | `Brainfuck: Minify Code` | Command Palette | Strips comments and whitespace |
@@ -76,7 +82,6 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `brainfuck.tapeSize`: Memory tape capacity in cells (Default: `30000`).
 - `brainfuck.cellWrapping`: 8-bit wrapping (0 - 1 = 255, 255 + 1 = 0) (Default: `true`).
 - `brainfuck.defaultRunDelayMs`: Step delay in milliseconds for visual auto-play (Default: `30ms`).
-- `brainfuck.autoOpenVisualTape`: Automatically open visual tape when opening a Brainfuck file (Default: `true`).
 
 ---
 

@@ -1,9 +1,10 @@
 {
   "name": "vscode-brainfuck",
   "displayName": "Brainfuck Support & Visual Tape Debugger",
-  "description": "Rich Brainfuck support with syntax highlighting, diagnostics, code runner, and an interactive memory tape visualizer.",
-  "version": "0.1.0",
-  "publisher": "ohualtex",
+  "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
+  "version": "0.1.2",
+  "publisher": "Ohualtex",
+  "icon": "icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,8 +28,7 @@
   ],
   "activationEvents": [
     "onLanguage:brainfuck",
-    "onWebviewPanel:brainfuckTapeVisualizer",
-    "onStartupFinished"
+    "onWebviewPanel:brainfuckTapeVisualizer"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -44,7 +44,11 @@
           ".bf",
           ".b"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/brainfuck-file-icon.svg",
+          "dark": "./icons/brainfuck-file-icon.svg"
+        }
       }
     ],
     "grammars": [
@@ -58,6 +62,13 @@
       {
         "language": "brainfuck",
         "path": "./snippets/brainfuck.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "brainfuck-icon-theme",
+        "label": "Brainfuck (Official)",
+        "path": "./icons/brainfuck-icon-theme.json"
       }
     ],
     "commands": [
@@ -137,11 +148,6 @@
           "type": "number",
           "default": 30,
           "description": "Default execution delay (ms) per instruction in visual tape auto-run."
-        },
-        "brainfuck.autoOpenVisualTape": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically open the Visual Memory Tape debugger when a Brainfuck file is opened."
         }
       }
     }
