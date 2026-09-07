@@ -17,23 +17,37 @@ export class BrainfuckDocumentFormattingEditProvider implements vscode.DocumentF
   }
 }
 
-export async function formatActiveDocument(uri?: vscode.Uri) {
-  let editor = vscode.window.activeTextEditor;
+async function getTargetEditor(uri?: vscode.Uri): Promise<vscode.TextEditor | undefined> {
   if (uri) {
     const uriStr = uri.toString();
-    const found = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
-    if (found) {
-      editor = found;
+    const visible = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
+    if (visible) {
+      return visible;
+    }
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      return await vscode.window.showTextDocument(doc);
+    } catch {
+      return undefined;
     }
   }
+  return vscode.window.activeTextEditor;
+}
+
+export async function formatActiveDocument(uri?: vscode.Uri) {
+  const editor = await getTargetEditor(uri);
 
   if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
 
+  const config = vscode.workspace.getConfiguration('brainfuck');
+  const indentSize = config.get<number>('format.indentSize', 2);
+  const insertSpaces = config.get<boolean>('format.insertSpaces', true);
+
   const doc = editor.document;
-  const formatted = formatBrainfuckSource(doc.getText());
+  const formatted = formatBrainfuckSource(doc.getText(), indentSize, insertSpaces);
   const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
 
   await editor.edit(editBuilder => {
@@ -44,14 +58,7 @@ export async function formatActiveDocument(uri?: vscode.Uri) {
 }
 
 export async function minifyActiveDocument(uri?: vscode.Uri) {
-  let editor = vscode.window.activeTextEditor;
-  if (uri) {
-    const uriStr = uri.toString();
-    const found = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uriStr);
-    if (found) {
-      editor = found;
-    }
-  }
+  const editor = await getTargetEditor(uri);
 
   if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');

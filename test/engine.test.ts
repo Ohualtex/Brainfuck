@@ -1,12 +1,6 @@
 /**
  * Comprehensive unit tests for Brainfuck Language Support & Visual Debugger
  */
-/**
- * Comprehensive unit tests for Brainfuck Language Support & Visual Debugger
- */
-/**
- * Comprehensive unit tests for Brainfuck Language Support & Visual Debugger
- */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBrainfuck } from '../src/interpreter/parser';
@@ -112,9 +106,73 @@ describe('Brainfuck Formatter & Minifier', () => {
     assert.equal(min, '++[>+<-]');
   });
 
+  it('should ignore operators and brackets inside line comments when minifying', () => {
+    const code = [
+      '// Add 5: +++++',
+      '; Reset to zero: [-]',
+      '# Comment with +++',
+      '++[>+<-]'
+    ].join('\n');
+    const min = minifyBrainfuckSource(code);
+    assert.equal(min, '++[>+<-]');
+  });
+
   it('should format code with indentation for loops', () => {
     const code = '++[>+<-]';
     const formatted = formatBrainfuckSource(code, 2, true);
     assert.equal(formatted, '++[\n  >+<-\n]\n');
   });
+
+  it('should format code with custom tabSize and tabs', () => {
+    const code = '++[>+<-]';
+    const formatted = formatBrainfuckSource(code, 4, false);
+    assert.equal(formatted, '++[\n\t>+<-\n]\n');
+  });
 });
+
+describe('Parser Edge Cases & Bug Fixes', () => {
+  it('should track line numbers correctly through multiline header comments', () => {
+    const code = [
+      '[ Header Comment Block',
+      '  Line 2 of comment',
+      '  Line 3 of comment ]',
+      '++',
+      ']' // Unmatched bracket on line 4 (0-indexed line 4)
+    ].join('\n');
+    const res = parseBrainfuck(code);
+    assert.equal(res.errors.length, 1);
+    assert.equal(res.errors[0].line, 4);
+    assert.match(res.errors[0].message, /Unmatched closing/);
+  });
+
+  it('should not create an out-of-bounds line index for EOF line comment without newline', () => {
+    const code = '++\n// end of file comment without newline';
+    const res = parseBrainfuck(code);
+    assert.equal(res.instructions.length, 2);
+    // Error on unclosed loop should have exact line
+    const codeWithErr = '++[\n// eof';
+    const resErr = parseBrainfuck(codeWithErr);
+    assert.equal(resErr.errors[0].line, 0); // '[' was on line 0
+  });
+
+  it('should treat # with whitespace as comment and bare # as breakpoint instruction', () => {
+    const code = [
+      '# This is a comment with +++',
+      '++#--'
+    ].join('\n');
+    const res = parseBrainfuck(code);
+    const chars = res.instructions.map(i => i.char).join('');
+    assert.equal(chars, '++#--');
+  });
+
+  it('should parse 135,000 character pure Brainfuck program swiftly without crashing', () => {
+    const huge = '>'.repeat(50000) + '+'.repeat(30000) + '-'.repeat(30000) + '<'.repeat(25000);
+    const t0 = Date.now();
+    const res = parseBrainfuck(huge);
+    const duration = Date.now() - t0;
+    assert.equal(res.instructions.length, 135000);
+    assert.equal(res.errors.length, 0);
+    assert.ok(duration < 500, `Expected parse time under 500ms, took ${duration}ms`);
+  });
+});
+

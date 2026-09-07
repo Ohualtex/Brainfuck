@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { parseBrainfuck } from '../interpreter/parser';
 
 export function isBrainfuckDocument(doc?: vscode.TextDocument): boolean {
   if (!doc) {
@@ -69,7 +68,7 @@ export async function resolveBrainfuckDocument(uri?: vscode.Uri): Promise<{
 export class TapePanel {
   public static currentPanel: TapePanel | undefined;
   private readonly _panel: vscode.WebviewPanel;
-  private readonly _extensionUri: vscode.Uri;
+  public readonly extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
   private _currentDoc: vscode.TextDocument | undefined;
   private _currentEditor: vscode.TextEditor | undefined;
@@ -113,7 +112,7 @@ export class TapePanel {
     initialEditor?: vscode.TextEditor
   ) {
     this._panel = panel;
-    this._extensionUri = extensionUri;
+    this.extensionUri = extensionUri;
     this._currentDoc = initialDoc;
     this._currentEditor = initialEditor;
 
@@ -1331,6 +1330,7 @@ export class TapePanel {
           break;
         case '#':
           ip++;
+          stepCount++;
           state = 'PAUSED';
           pause();
           return false;

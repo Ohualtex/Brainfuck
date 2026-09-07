@@ -47,10 +47,16 @@ export function parseBrainfuck(source: string): ParseResult {
       continue;
     }
 
-    // Skip line comments starting with // or ;
-    if ((ch === '/' && source[i + 1] === '/') || ch === ';') {
+    // Skip line comments starting with // or ; or # (when followed by space/tab)
+    if (
+      (ch === '/' && source[i + 1] === '/') ||
+      ch === ';' ||
+      (ch === '#' && (source[i + 1] === ' ' || source[i + 1] === '\t'))
+    ) {
       while (i < source.length && source[i] !== '\n') i++;
-      line++;
+      if (i < source.length && source[i] === '\n') {
+        line++;
+      }
       col = 0;
       continue;
     }
@@ -62,6 +68,14 @@ export function parseBrainfuck(source: string): ParseResult {
       if (j < source.length && /[a-zA-Z]/.test(source[j])) {
         while (j < source.length && source[j] !== ']') j++;
         if (j < source.length && source[j] === ']') {
+          for (let k = i; k <= j; k++) {
+            if (source[k] === '\n') {
+              line++;
+              col = 0;
+            } else {
+              col++;
+            }
+          }
           i = j;
           continue;
         }

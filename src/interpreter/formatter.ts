@@ -1,3 +1,5 @@
+import { parseBrainfuck } from './parser';
+
 export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces = true): string {
   const indentStr = insertSpaces ? ' '.repeat(tabSize) : '\t';
 
@@ -36,12 +38,6 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
 }
 
 export function minifyBrainfuckSource(source: string): string {
-  const bfChars = new Set(['>', '<', '+', '-', '.', ',', '[', ']', '#']);
-  let result = '';
-  for (let i = 0; i < source.length; i++) {
-    if (bfChars.has(source[i])) {
-      result += source[i];
-    }
-  }
-  return result;
+  const parseResult = parseBrainfuck(source);
+  return parseResult.instructions.map(i => i.char).join('');
 }

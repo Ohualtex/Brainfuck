@@ -38,7 +38,7 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     return;
   }
 
-  const source = editor.document.getText();
+  const source = doc.getText();
   const parseResult = parseBrainfuck(source);
 
   const errors = parseResult.errors.filter(e => !e.message.includes('Empty loop'));
@@ -79,7 +79,7 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
   }
 
   const startTime = Date.now();
-  const maxSteps = 5000000; // 5 million steps max safeguard
+  const maxSteps = config.get<number>('execution.maxSteps', 5000000);
   let steps = 0;
 
   while (
