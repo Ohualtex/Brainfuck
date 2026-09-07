@@ -62,10 +62,10 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `bf-add` / `bf-sub`: Addition and subtraction between cells.
 - `bf-mult`: Multiplication loop template.
 
-### 7. 🎛️ Explorer Icons & Status Bar Integration
+### 7. 🎛️ Explorer Icons & Title Bar Integration
 - **Branded Explorer Icons:** Custom transparent `>+` badge icons for `.bf` and `.b` files in the VS Code explorer tree and editor tabs.
 - **Dedicated Icon Theme:** Includes the official `Brainfuck (Official)` icon theme.
-- **Status Bar Integration:** Discreet `$(circuit-board) Brainfuck Tape` button in the status bar for instant 1-click access.
+- **Editor Title Bar Integration:** Dedicated `$(circuit-board)` icon in the editor navigation bar for instant 1-click visual memory tape access.
 
 ---
 
@@ -73,8 +73,8 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 
 | Command | Shortcut / Location | Description |
 |---|---|---|
-| `Brainfuck: Open Visual Tape Debugger` | Title Bar / Status Bar / Context Menu | Opens the interactive visual memory tape |
-| `Brainfuck: Run Code in Output Channel` | Title Bar / Context Menu | Executes the code in the output channel |
+| `Brainfuck: Open Visual Tape Debugger` | Title Bar (`$(circuit-board)`) / Context Menu | Opens the interactive visual memory tape |
+| `Brainfuck: Run Code in Output Channel` | Title Bar (`$(run)`) / Context Menu | Executes the code in the output channel |
 | `Brainfuck: Format / Indent Loops` | `Shift+Alt+F` / Context Menu | Indents and formats loops |
 | `Brainfuck: Minify Code` | Command Palette / Context Menu | Strips comments and whitespace |
 

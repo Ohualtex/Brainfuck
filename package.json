@@ -85,7 +85,7 @@
       {
         "command": "brainfuck.openVisualTape",
         "title": "Brainfuck: Open Visual Tape Debugger",
-        "icon": "$(play-circle)",
+        "icon": "$(circuit-board)",
         "category": "Brainfuck"
       },
       {

@@ -47,29 +47,9 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // 4. Status Bar Item (quick open for Visual Tape)
-  const statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100
-  );
-  statusBarItem.command = 'brainfuck.openVisualTape';
-  statusBarItem.text = '$(circuit-board) Brainfuck Tape';
-  statusBarItem.tooltip = 'Open Brainfuck Visual Memory Tape Debugger';
-  context.subscriptions.push(statusBarItem);
-
-  const updateStatusBar = (editor: vscode.TextEditor | undefined) => {
-    if (editor && editor.document.languageId === 'brainfuck') {
-      statusBarItem.show();
-    } else {
-      statusBarItem.hide();
-    }
-  };
-  updateStatusBar(vscode.window.activeTextEditor);
-
-  // Sync open visual tape when switching Brainfuck files (only if already opened manually by user)
+  // 4. Sync open visual tape when switching Brainfuck files (only if already opened manually by user)
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(editor => {
-      updateStatusBar(editor);
       if (editor && editor.document.languageId === 'brainfuck') {
         if (TapePanel.currentPanel) {
           TapePanel.currentPanel.syncWithActiveEditor();
