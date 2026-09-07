@@ -2,7 +2,7 @@
 
 > **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
 
-[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.85.0-007ACC.svg)](https://code.visualstudio.com/)
@@ -44,7 +44,7 @@ High-performance, smooth memory visualizer built with native VS Code design toke
   - **Reset (`R`):** Reset tape memory, pointer, and output console.
 - **Bidirectional Editor Sync:** The currently executing instruction in the editor is highlighted with a gold focus indicator in real-time.
 - **Direct Cell Editing:** Click any memory cell on the tape to directly modify its value (0 - 255).
-- **Input Buffer & Output Console:** Interactive `,` input queuing and real-time output terminal.
+- **Dedicated Terminal STDOUT Console:** Full-width collapsible output console supporting multi-line streams, monospace ASCII rendering, auto-scroll, 1-click clipboard copy (`📋 Copy`), buffer wipe (`🗑 Clear`), line wrap toggle (`↩ Wrap`), and adjustable panel height.
 
 ### 4. 🚀 Output Channel Runner
 - Execute Brainfuck code instantly via the editor title bar Run button or the command palette (`Brainfuck: Run Code in Output Channel`).
@@ -79,19 +79,32 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 | `Brainfuck: Minify Code` | Command Palette / Context Menu | Strips comments and whitespace |
 
 ### Inside the Visual Debugger:
-- **`Space`**: Run / Pause
-- **`Right Arrow` (`→`)**: Step Next
+- **`Space`**: Run / Pause auto-execution
+- **`Right Arrow` (`→`)**: Step Next instruction
 - **`Left Arrow` (`←`)**: Step Prev (Time-Travel Undo)
-- **`R`**: Reset tape and output
-- **`Cell: [#...]`**: Jump to specific cell index
+- **`R`**: Reset memory tape, pointer, and output
+- **`Speed: [...]ms`**: Click to type custom execution delay or drag slider
+- **`Cell: [#...]`**: Click to directly jump to any memory cell (`0` – `29999`)
+- **`Output Console`**: Click the `#statOutputPill` header to jump to console; use **`📋 Copy`**, **`🗑 Clear`**, **`↩ Wrap`**, and **`▾ Collapse`** to control terminal STDOUT.
 
 ---
 
 ## ⚙️ Extension Settings
 
-- `brainfuck.tapeSize`: Memory tape capacity in cells (Default: `30000`).
-- `brainfuck.cellWrapping`: 8-bit wrapping (0 - 1 = 255, 255 + 1 = 0) (Default: `true`).
-- `brainfuck.defaultRunDelayMs`: Step delay in milliseconds for visual auto-play (Default: `30ms`).
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `brainfuck.tapeSize` | `integer` | `30000` | Memory tape capacity in cells. |
+| `brainfuck.cellWrapping` | `boolean` | `true` | 8-bit cell wrapping (`0 - 1 = 255`, `255 + 1 = 0`). |
+| `brainfuck.defaultRunDelayMs` | `integer` | `30` | Default execution delay in milliseconds between steps during auto-run. |
+| `brainfuck.debugger.outputHeight` | `integer` | `140` | Maximum height (in pixels) for the terminal STDOUT output console in the visual debugger. |
+| `brainfuck.debugger.syncEditorOnStep` | `boolean` | `true` | Highlight the active instruction in the editor during debugger execution. |
+| `brainfuck.debugger.visibleCells` | `integer` | `50` | Number of cells displayed in the memory tape conveyor viewport. |
+| `brainfuck.execution.clearPreviousOutput` | `boolean` | `false` | Clear the Brainfuck Output channel before each execution run. |
+| `brainfuck.execution.showSummary` | `boolean` | `true` | Print execution metrics (step count, elapsed time, final cell) upon completion. |
+| `brainfuck.diagnostics.enable` | `boolean` | `true` | Enable real-time syntax checking and bracket balancing diagnostics. |
+| `brainfuck.diagnostics.warnOnEmptyLoops` | `boolean` | `true` | Warn about redundant infinite loops like `[]`. |
+
+Additionally, Brainfuck files automatically default to `"editor.wordWrap": "on"` for seamless code editing.
 
 ---
 
