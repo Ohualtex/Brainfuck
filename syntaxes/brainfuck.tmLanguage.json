@@ -70,15 +70,15 @@
       "patterns": [
         {
           "name": "variable.other.constant.pointer.brainfuck",
-          "match": "[><]"
+          "match": "[><]+"
         },
         {
           "name": "constant.numeric.arithmetic.brainfuck",
-          "match": "[+-]"
+          "match": "[+-]+"
         },
         {
           "name": "support.function.io.brainfuck",
-          "match": "[.,]"
+          "match": "[.,]+"
         },
         {
           "name": "keyword.control.loop.brainfuck",
