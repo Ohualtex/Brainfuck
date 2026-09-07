@@ -697,8 +697,32 @@ export class TapePanel {
       align-items: center;
       gap: 4px;
       overflow-x: auto;
-      padding: 4px 0;
+      padding: 6px 2px 14px 2px;
       scrollbar-width: thin;
+    }
+
+    .tape-conveyor::-webkit-scrollbar,
+    .stream-wrapper::-webkit-scrollbar,
+    .console-body::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .tape-conveyor::-webkit-scrollbar-track,
+    .stream-wrapper::-webkit-scrollbar-track,
+    .console-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+    .tape-conveyor::-webkit-scrollbar-thumb,
+    .stream-wrapper::-webkit-scrollbar-thumb,
+    .console-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 3px;
+    }
+    .tape-conveyor::-webkit-scrollbar-thumb:hover,
+    .stream-wrapper::-webkit-scrollbar-thumb:hover,
+    .console-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.28);
     }
 
     .instr-chip {
@@ -813,8 +837,9 @@ export class TapePanel {
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding: 8px 4px 18px 4px;
+      padding: 10px 6px 32px 6px;
       scroll-behavior: smooth;
+      scrollbar-width: thin;
     }
 
     .cell-card {
@@ -921,7 +946,7 @@ export class TapePanel {
       transition: width 0.15s ease;
     }
 
-    /* CONSOLE / OUTPUT TERMINAL */
+    /* CONSOLE / OUTPUT TERMINAL (VS Code Native Terminal Style) */
     .console-section {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
@@ -936,64 +961,89 @@ export class TapePanel {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 12px;
+      padding: 6px 12px;
       background: rgba(0, 0, 0, 0.25);
       border-bottom: 1px solid var(--border-color);
       font-size: 11px;
       font-weight: 600;
       color: var(--text-secondary);
+      user-select: none;
     }
 
     .console-title {
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: var(--font-ui);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-primary);
     }
 
     .console-icon {
-      font-size: 12px;
-      color: var(--status-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4ade80;
     }
 
     .console-badge {
       background: rgba(255, 255, 255, 0.08);
-      color: var(--text-primary);
-      padding: 2px 7px;
+      color: var(--text-muted);
+      padding: 1px 7px;
       border-radius: 10px;
       font-size: 10px;
       font-family: var(--font-mono);
       font-weight: normal;
+      letter-spacing: 0;
     }
 
     .console-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
-    .console-btn {
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border-subtle);
+    .console-icon-btn {
+      background: transparent;
+      border: none;
       color: var(--text-secondary);
-      font-family: var(--font-ui);
-      font-size: 11px;
-      padding: 3px 8px;
+      width: 24px;
+      height: 24px;
       border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      user-select: none;
+      padding: 0;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .console-btn:hover {
+    .console-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .console-icon-btn.active {
       background: var(--accent-selection);
       color: #ffffff;
-      border-color: var(--accent-primary);
+    }
+
+    .console-icon-btn.copied {
+      color: #4ade80;
+    }
+
+    .console-icon-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
     }
 
     .console-body {
       padding: 10px 14px;
       background: #090d13;
-      min-height: 85px;
+      min-height: 90px;
       max-height: 220px;
       overflow-y: auto;
       overflow-x: auto;
@@ -1015,6 +1065,9 @@ export class TapePanel {
       white-space: pre;
       margin: 0;
       user-select: text;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
     }
 
     .console-content.wrapped {
@@ -1048,10 +1101,6 @@ export class TapePanel {
       <div class="stat-pill">
         <span class="stat-label">Value (Hex/Ascii)</span>
         <span class="stat-val" id="statVal">0 (0x00) '.'</span>
-      </div>
-      <div class="stat-pill" id="statOutputPill" style="cursor: pointer;" title="Click to jump to Output Console">
-        <span class="stat-label">Output</span>
-        <span class="stat-val" id="statOutput" style="color: #4ade80;">0 chars</span>
       </div>
       <div class="stat-pill">
         <span class="stat-label">Steps</span>
@@ -1108,19 +1157,29 @@ export class TapePanel {
   <div class="console-section" id="consoleSection">
     <div class="console-header">
       <div class="console-title">
-        <span class="console-icon">⌨</span>
-        <span>Program Output (STDOUT)</span>
+        <span class="console-icon">
+          <svg viewBox="0 0 16 16" width="13" height="13"><path fill="currentColor" fill-rule="evenodd" d="M2.5 3.5l4 4.5-4 4.5-.7-.7L5.1 8 1.8 4.2l.7-.7zM8 12h6v1H8v-1z"/></svg>
+        </span>
+        <span>Output</span>
         <span class="console-badge" id="consoleBadge">0 chars</span>
       </div>
       <div class="console-actions">
-        <button class="console-btn" id="btnCopyOutput" title="Copy Output to Clipboard">📋 Copy</button>
-        <button class="console-btn" id="btnClearOutput" title="Clear Console Output">🗑️ Clear</button>
-        <button class="console-btn" id="btnToggleWrap" title="Toggle Line Wrap">↩ Wrap</button>
-        <button class="console-btn" id="btnToggleConsole" title="Collapse / Expand Console">▼</button>
+        <button class="console-icon-btn" id="btnCopyOutput" title="Copy Output to Clipboard">
+          <svg viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M4 4h7V2H3v9h1V4zm8 2H6v8h6V6zm1-1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h8z"/></svg>
+        </button>
+        <button class="console-icon-btn" id="btnClearOutput" title="Clear Output">
+          <svg viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M10 2H6v1H2v2h1v9a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5h1V3h-4V2zM4 5h8v9H4V5zm2 2h1v5H6V7zm3 0h1v5H9V7z"/></svg>
+        </button>
+        <button class="console-icon-btn" id="btnToggleWrap" title="Toggle Word Wrap">
+          <svg viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M2 3h12v1H2V3zm0 4h9a2 2 0 0 1 2 2v1.5a2 2 0 0 1-2 2H8.5v1.8l-2.4-2.3 2.4-2.3v1.8H11a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H2V7zm0 4h3v1H2v-1z"/></svg>
+        </button>
+        <button class="console-icon-btn" id="btnToggleConsole" title="Collapse / Expand Output">
+          <svg id="consoleChevronSvg" viewBox="0 0 16 16"><path fill="currentColor" fill-rule="evenodd" d="M7.976 10.072l4.357-4.357.62.618-4.667 4.667h-.62L3 6.333l.619-.618 4.357 4.357z"/></svg>
+        </button>
       </div>
     </div>
     <div class="console-body" id="consoleBody">
-      <pre class="console-content" id="consoleContent"><span class="console-placeholder">(Program output will appear here in real-time...)</span></pre>
+      <pre class="console-content" id="consoleContent"><span class="console-placeholder">(Program output will appear here...)</span></pre>
     </div>
   </div>
 
@@ -1174,8 +1233,6 @@ export class TapePanel {
     const streamWrapper = document.getElementById('streamWrapper');
     const streamCounter = document.getElementById('streamCounter');
     const tapeConveyor = document.getElementById('tapeConveyor');
-    const statOutput = document.getElementById('statOutput');
-    const statOutputPill = document.getElementById('statOutputPill');
     const cellLabel = document.getElementById('cellLabel');
     const cellInput = document.getElementById('cellInput');
     const consoleSection = document.getElementById('consoleSection');
@@ -1415,7 +1472,7 @@ export class TapePanel {
     function updateOutputUI() {
       if (consoleContent) {
         if (output.length === 0) {
-          consoleContent.innerHTML = '<span class="console-empty">No output yet. Run instructions to produce STDOUT.</span>';
+          consoleContent.innerHTML = '<span class="console-placeholder">(No output yet. Run instructions to produce output.)</span>';
         } else {
           consoleContent.textContent = output;
           consoleContent.scrollTop = consoleContent.scrollHeight;
@@ -1423,16 +1480,6 @@ export class TapePanel {
       }
       if (consoleBadge) {
         consoleBadge.textContent = output.length + (output.length === 1 ? ' char' : ' chars');
-      }
-      if (statOutput) {
-        if (output.length === 0) {
-          statOutput.textContent = '-';
-          statOutput.title = '';
-        } else {
-          const preview = output.slice(-20).split(String.fromCharCode(10)).join('↵');
-          statOutput.textContent = (output.length > 20 ? '…' : '') + preview;
-          statOutput.title = output;
-        }
       }
     }
 
@@ -1794,10 +1841,11 @@ export class TapePanel {
       btnCopyOutput.addEventListener('click', () => {
         if (!output) return;
         vscode.postMessage({ type: 'copyText', text: output });
-        const orig = btnCopyOutput.textContent;
-        btnCopyOutput.textContent = '✓ Copied';
+        btnCopyOutput.classList.add('copied');
+        btnCopyOutput.title = 'Copied!';
         setTimeout(() => {
-          btnCopyOutput.textContent = orig;
+          btnCopyOutput.classList.remove('copied');
+          btnCopyOutput.title = 'Copy Output to Clipboard';
         }, 1200);
       });
     }
@@ -1813,7 +1861,7 @@ export class TapePanel {
       btnToggleWrap.addEventListener('click', () => {
         isWrapped = !isWrapped;
         if (consoleContent) {
-          consoleContent.classList.toggle('wrap-on', isWrapped);
+          consoleContent.classList.toggle('wrapped', isWrapped);
         }
         btnToggleWrap.classList.toggle('active', isWrapped);
       });
@@ -1825,17 +1873,10 @@ export class TapePanel {
         if (consoleSection) {
           consoleSection.classList.toggle('collapsed', isConsoleCollapsed);
         }
-        btnToggleConsole.textContent = isConsoleCollapsed ? '▸ Expand' : '▾ Collapse';
-      });
-    }
-
-    if (statOutputPill) {
-      statOutputPill.addEventListener('click', () => {
-        if (isConsoleCollapsed && btnToggleConsole) {
-          btnToggleConsole.click();
-        }
-        if (consoleSection) {
-          consoleSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const chevronSvg = document.getElementById('consoleChevronSvg');
+        if (chevronSvg) {
+          chevronSvg.style.transform = isConsoleCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+          chevronSvg.style.transition = 'transform 0.15s ease';
         }
       });
     }
