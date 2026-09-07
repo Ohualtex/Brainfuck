@@ -9,17 +9,30 @@ export function updateDiagnostics(
     return;
   }
 
+  const config = vscode.workspace.getConfiguration('brainfuck');
+  const enable = config.get<boolean>('diagnostics.enable', true);
+  if (!enable) {
+    collection.delete(document.uri);
+    return;
+  }
+
+  const warnOnEmptyLoops = config.get<boolean>('diagnostics.warnOnEmptyLoops', true);
   const text = document.getText();
   const parseResult = parseBrainfuck(text);
   const diagnostics: vscode.Diagnostic[] = [];
 
   for (const err of parseResult.errors) {
+    const isEmptyLoop = err.message.includes('Empty loop');
+    if (isEmptyLoop && !warnOnEmptyLoops) {
+      continue;
+    }
+
     const range = new vscode.Range(
       new vscode.Position(err.line, err.col),
       new vscode.Position(err.line, err.col + (err.length || 1))
     );
 
-    const severity = err.message.includes('Empty loop')
+    const severity = isEmptyLoop
       ? vscode.DiagnosticSeverity.Warning
       : vscode.DiagnosticSeverity.Error;
 

@@ -64,12 +64,18 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     userInput = input;
   }
 
+  const config = vscode.workspace.getConfiguration('brainfuck');
+  const clearPrevious = config.get<boolean>('execution.clearPreviousOutput', false);
+  const showSummary = config.get<boolean>('execution.showSummary', true);
+
   const channel = getOutputChannel();
+  if (clearPrevious) {
+    channel.clear();
+  }
   channel.show(true);
   channel.appendLine(`\n[${new Date().toLocaleTimeString()}] Starting Brainfuck execution...`);
   channel.appendLine('----------------------------------------------------');
 
-  const config = vscode.workspace.getConfiguration('brainfuck');
   const tapeSize = config.get<number>('tapeSize', 30000);
   const cellWrapping = config.get<boolean>('cellWrapping', true);
 
@@ -100,14 +106,16 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     channel.appendLine('(Program produced no output)');
   }
 
-  channel.appendLine('----------------------------------------------------');
-  if (steps >= maxSteps) {
-    channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
-  } else if (engine.state === ExecutionState.ERROR) {
-    channel.appendLine(`[ERROR] ${engine.errorMessage}`);
-  } else {
-    channel.appendLine(
-      `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
-    );
+  if (showSummary) {
+    channel.appendLine('----------------------------------------------------');
+    if (steps >= maxSteps) {
+      channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
+    } else if (engine.state === ExecutionState.ERROR) {
+      channel.appendLine(`[ERROR] ${engine.errorMessage}`);
+    } else {
+      channel.appendLine(
+        `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
+      );
+    }
   }
 }

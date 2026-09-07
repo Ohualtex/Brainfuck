@@ -2,7 +2,7 @@
   "name": "extension-pack-for-brainfuck",
   "displayName": "Extension Pack for Brainfuck",
   "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "Ohualtex",
   "icon": "icon.png",
   "license": "MIT",
@@ -143,7 +143,8 @@
     },
     "configurationDefaults": {
       "[brainfuck]": {
-        "editor.maxTokenizationLineLength": 500000
+        "editor.maxTokenizationLineLength": 500000,
+        "editor.wordWrap": "on"
       }
     },
     "configuration": {
@@ -164,6 +165,21 @@
           "default": 30,
           "description": "Default execution delay (ms) per instruction in visual tape auto-run."
         },
+        "brainfuck.debugger.outputHeight": {
+          "type": "number",
+          "default": 140,
+          "description": "Height in pixels of the visual debugger terminal output console."
+        },
+        "brainfuck.debugger.syncEditorOnStep": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight the active instruction in the VS Code text editor during visual debugging."
+        },
+        "brainfuck.debugger.visibleCells": {
+          "type": "number",
+          "default": 50,
+          "description": "Number of tape memory cells visible in the viewport around the active pointer."
+        },
         "brainfuck.format.indentSize": {
           "type": "number",
           "default": 2,
@@ -178,6 +194,26 @@
           "type": "number",
           "default": 5000000,
           "description": "Maximum execution steps in Output Channel before stopping to prevent infinite loops."
+        },
+        "brainfuck.execution.clearPreviousOutput": {
+          "type": "boolean",
+          "default": false,
+          "description": "Clear the Output Channel before executing a Brainfuck program."
+        },
+        "brainfuck.execution.showSummary": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show execution metrics summary (steps, duration, cell value) upon completion in Output Channel."
+        },
+        "brainfuck.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time syntax and bracket pair diagnostics."
+        },
+        "brainfuck.diagnostics.warnOnEmptyLoops": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display warning diagnostics for empty loop constructs ([])."
         }
       }
     }
