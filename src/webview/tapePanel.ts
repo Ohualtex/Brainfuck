@@ -148,12 +148,38 @@ export class TapePanel {
           case 'clearHighlight':
             this.clearHighlight();
             break;
+          case 'copyText':
+            if (message.text) {
+              vscode.env.clipboard.writeText(message.text);
+              vscode.window.showInformationMessage('Brainfuck output copied to clipboard.');
+            }
+            break;
           case 'info':
             vscode.window.showInformationMessage(message.text);
             break;
           case 'error':
             vscode.window.showErrorMessage(message.text);
             break;
+        }
+      },
+      null,
+      this._disposables
+    );
+
+    // Track configuration changes
+    vscode.workspace.onDidChangeConfiguration(
+      e => {
+        if (e.affectsConfiguration('brainfuck')) {
+          const config = vscode.workspace.getConfiguration('brainfuck');
+          this._panel.webview.postMessage({
+            type: 'configUpdate',
+            tapeSize: config.get<number>('tapeSize', 30000),
+            cellWrapping: config.get<boolean>('cellWrapping', true),
+            defaultRunDelayMs: config.get<number>('defaultRunDelayMs', 30),
+            outputHeight: config.get<number>('debugger.outputHeight', 140),
+            visibleCells: config.get<number>('debugger.visibleCells', 50),
+            syncEditorOnStep: config.get<boolean>('debugger.syncEditorOnStep', true)
+          });
         }
       },
       null,
@@ -218,6 +244,11 @@ export class TapePanel {
   }
 
   private highlightInstruction(sourceOffset: number) {
+    const config = vscode.workspace.getConfiguration('brainfuck');
+    if (!config.get<boolean>('debugger.syncEditorOnStep', true)) {
+      return;
+    }
+
     let editor = this._currentEditor;
     if (!editor || editor.document.isClosed) {
       const targetUriStr = this._currentDoc?.uri.toString();
@@ -310,7 +341,25 @@ export class TapePanel {
 `;
     const finalCode = initialCode || defaultCode;
     const finalFileName = initialFileName || 'hello_world.bf';
-    const initialJson = JSON.stringify({ code: finalCode, fileName: finalFileName }).replace(/</g, '\\u003c');
+
+    const config = vscode.workspace.getConfiguration('brainfuck');
+    const tapeSize = config.get<number>('tapeSize', 30000);
+    const cellWrapping = config.get<boolean>('cellWrapping', true);
+    const defaultRunDelayMs = config.get<number>('defaultRunDelayMs', 30);
+    const outputHeight = config.get<number>('debugger.outputHeight', 140);
+    const visibleCells = config.get<number>('debugger.visibleCells', 50);
+    const syncEditorOnStep = config.get<boolean>('debugger.syncEditorOnStep', true);
+
+    const initialJson = JSON.stringify({
+      code: finalCode,
+      fileName: finalFileName,
+      tapeSize,
+      cellWrapping,
+      defaultRunDelayMs,
+      outputHeight,
+      visibleCells,
+      syncEditorOnStep
+    }).replace(/</g, '\\u003c');
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -872,6 +921,112 @@ export class TapePanel {
       transition: width 0.15s ease;
     }
 
+    /* CONSOLE / OUTPUT TERMINAL */
+    .console-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .console-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .console-icon {
+      font-size: 12px;
+      color: var(--status-green);
+    }
+
+    .console-badge {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: normal;
+    }
+
+    .console-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .console-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .console-btn:hover {
+      background: var(--accent-selection);
+      color: #ffffff;
+      border-color: var(--accent-primary);
+    }
+
+    .console-body {
+      padding: 10px 14px;
+      background: #090d13;
+      min-height: 85px;
+      max-height: 220px;
+      overflow-y: auto;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      transition: max-height 0.2s ease, min-height 0.2s ease, padding 0.2s ease;
+    }
+
+    .console-body.collapsed {
+      min-height: 0 !important;
+      max-height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .console-content {
+      color: #4ade80;
+      white-space: pre;
+      margin: 0;
+      user-select: text;
+    }
+
+    .console-content.wrapped {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .console-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
   </style>
 </head>
 <body>
@@ -894,9 +1049,9 @@ export class TapePanel {
         <span class="stat-label">Value (Hex/Ascii)</span>
         <span class="stat-val" id="statVal">0 (0x00) '.'</span>
       </div>
-      <div class="stat-pill">
+      <div class="stat-pill" id="statOutputPill" style="cursor: pointer;" title="Click to jump to Output Console">
         <span class="stat-label">Output</span>
-        <span class="stat-val" id="statOutput" style="color: #4ade80; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Program output string">-</span>
+        <span class="stat-val" id="statOutput" style="color: #4ade80;">0 chars</span>
       </div>
       <div class="stat-pill">
         <span class="stat-label">Steps</span>
@@ -949,12 +1104,43 @@ export class TapePanel {
     <div class="tape-conveyor" id="tapeConveyor"></div>
   </div>
 
+  <!-- TERMINAL OUTPUT CONSOLE -->
+  <div class="console-section" id="consoleSection">
+    <div class="console-header">
+      <div class="console-title">
+        <span class="console-icon">⌨</span>
+        <span>Program Output (STDOUT)</span>
+        <span class="console-badge" id="consoleBadge">0 chars</span>
+      </div>
+      <div class="console-actions">
+        <button class="console-btn" id="btnCopyOutput" title="Copy Output to Clipboard">📋 Copy</button>
+        <button class="console-btn" id="btnClearOutput" title="Clear Console Output">🗑️ Clear</button>
+        <button class="console-btn" id="btnToggleWrap" title="Toggle Line Wrap">↩ Wrap</button>
+        <button class="console-btn" id="btnToggleConsole" title="Collapse / Expand Console">▼</button>
+      </div>
+    </div>
+    <div class="console-body" id="consoleBody">
+      <pre class="console-content" id="consoleContent"><span class="console-placeholder">(Program output will appear here in real-time...)</span></pre>
+    </div>
+  </div>
+
   <script id="bf-initial-data" type="application/json">${initialJson}</script>
   <script>
     const vscode = acquireVsCodeApi();
 
-    // Engine State
-    const TAPE_SIZE = 30000;
+    let initialData = {};
+    try {
+      const el = document.getElementById('bf-initial-data');
+      if (el && el.textContent) {
+        initialData = JSON.parse(el.textContent);
+      }
+    } catch (e) {
+      console.error('Failed to parse initial data', e);
+    }
+
+    // Engine State & Dynamic Settings
+    const TAPE_SIZE = initialData.tapeSize || 30000;
+    let cellWrapping = initialData.cellWrapping !== false;
     const memory = new Uint8Array(TAPE_SIZE);
     let ptr = 0;
     let ip = 0;
@@ -965,10 +1151,10 @@ export class TapePanel {
     let history = [];
     let isRunning = false;
     let runTimer = null;
-    let stepDelay = 30;
+    let stepDelay = initialData.defaultRunDelayMs || 30;
 
     // View Window: Number of cells visible around pointer
-    const VISIBLE_CELL_WINDOW = 50;
+    let VISIBLE_CELL_WINDOW = initialData.visibleCells || 50;
     let currentWindowStart = 0;
     let editingCell = null;
 
@@ -989,9 +1175,24 @@ export class TapePanel {
     const streamCounter = document.getElementById('streamCounter');
     const tapeConveyor = document.getElementById('tapeConveyor');
     const statOutput = document.getElementById('statOutput');
+    const statOutputPill = document.getElementById('statOutputPill');
     const cellLabel = document.getElementById('cellLabel');
     const cellInput = document.getElementById('cellInput');
+    const consoleSection = document.getElementById('consoleSection');
+    const consoleBadge = document.getElementById('consoleBadge');
+    const consoleContent = document.getElementById('consoleContent');
+    const consoleBody = document.getElementById('consoleBody');
+    const btnCopyOutput = document.getElementById('btnCopyOutput');
+    const btnClearOutput = document.getElementById('btnClearOutput');
+    const btnToggleWrap = document.getElementById('btnToggleWrap');
+    const btnToggleConsole = document.getElementById('btnToggleConsole');
     let isEditingCellJump = false;
+    let isConsoleCollapsed = false;
+    let isWrapped = false;
+
+    if (initialData.outputHeight && consoleBody) {
+      consoleBody.style.maxHeight = initialData.outputHeight + 'px';
+    }
 
     // Parse Brainfuck locally for high performance
     function parseCode(src) {
@@ -1211,6 +1412,30 @@ export class TapePanel {
       }
     }
 
+    function updateOutputUI() {
+      if (consoleContent) {
+        if (output.length === 0) {
+          consoleContent.innerHTML = '<span class="console-empty">No output yet. Run instructions to produce STDOUT.</span>';
+        } else {
+          consoleContent.textContent = output;
+          consoleContent.scrollTop = consoleContent.scrollHeight;
+        }
+      }
+      if (consoleBadge) {
+        consoleBadge.textContent = output.length + (output.length === 1 ? ' char' : ' chars');
+      }
+      if (statOutput) {
+        if (output.length === 0) {
+          statOutput.textContent = '-';
+          statOutput.title = '';
+        } else {
+          const preview = output.slice(-20).split(String.fromCharCode(10)).join('↵');
+          statOutput.textContent = (output.length > 20 ? '…' : '') + preview;
+          statOutput.title = output;
+        }
+      }
+    }
+
     function updateUI() {
       // Stats
       statPtr.textContent = '#' + ptr;
@@ -1235,6 +1460,7 @@ export class TapePanel {
 
       renderStream();
       renderTape();
+      updateOutputUI();
 
       // Keep active cell in view when not editing
       const activeCard = tapeConveyor.querySelector('.cell-card.active');
@@ -1284,17 +1510,15 @@ export class TapePanel {
           ip++;
           break;
         case '+':
-          memory[ptr] = (memory[ptr] + 1) & 0xff;
+          memory[ptr] = cellWrapping ? ((memory[ptr] + 1) & 0xff) : Math.min(255, memory[ptr] + 1);
           ip++;
           break;
         case '-':
-          memory[ptr] = (memory[ptr] - 1) & 0xff;
+          memory[ptr] = cellWrapping ? ((memory[ptr] - 1 + 256) & 0xff) : Math.max(0, memory[ptr] - 1);
           ip++;
           break;
         case '.':
           output += String.fromCharCode(memory[ptr]);
-          statOutput.textContent = output.split(String.fromCharCode(10)).join('↵') || '-';
-          statOutput.title = output;
           ip++;
           break;
         case ',':
@@ -1366,8 +1590,6 @@ export class TapePanel {
       ptr = snap.ptr;
       memory[snap.ptr] = snap.cellVal;
       output = output.substring(0, snap.outLen);
-      statOutput.textContent = output.split(String.fromCharCode(10)).join('↵') || '-';
-      statOutput.title = output;
       stepCount = Math.max(0, stepCount - 1);
       state = 'PAUSED';
       updateUI();
@@ -1424,8 +1646,6 @@ export class TapePanel {
       output = '';
       stepCount = 0;
       history = [];
-      statOutput.textContent = '-';
-      statOutput.title = '';
       state = 'READY';
       vscode.postMessage({ type: 'clearHighlight' });
       updateUI();
@@ -1569,6 +1789,57 @@ export class TapePanel {
       commitCellJump();
     });
 
+    // Terminal Console Controls
+    if (btnCopyOutput) {
+      btnCopyOutput.addEventListener('click', () => {
+        if (!output) return;
+        vscode.postMessage({ type: 'copyText', text: output });
+        const orig = btnCopyOutput.textContent;
+        btnCopyOutput.textContent = '✓ Copied';
+        setTimeout(() => {
+          btnCopyOutput.textContent = orig;
+        }, 1200);
+      });
+    }
+
+    if (btnClearOutput) {
+      btnClearOutput.addEventListener('click', () => {
+        output = '';
+        updateOutputUI();
+      });
+    }
+
+    if (btnToggleWrap) {
+      btnToggleWrap.addEventListener('click', () => {
+        isWrapped = !isWrapped;
+        if (consoleContent) {
+          consoleContent.classList.toggle('wrap-on', isWrapped);
+        }
+        btnToggleWrap.classList.toggle('active', isWrapped);
+      });
+    }
+
+    if (btnToggleConsole) {
+      btnToggleConsole.addEventListener('click', () => {
+        isConsoleCollapsed = !isConsoleCollapsed;
+        if (consoleSection) {
+          consoleSection.classList.toggle('collapsed', isConsoleCollapsed);
+        }
+        btnToggleConsole.textContent = isConsoleCollapsed ? '▸ Expand' : '▾ Collapse';
+      });
+    }
+
+    if (statOutputPill) {
+      statOutputPill.addEventListener('click', () => {
+        if (isConsoleCollapsed && btnToggleConsole) {
+          btnToggleConsole.click();
+        }
+        if (consoleSection) {
+          consoleSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      });
+    }
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1599,6 +1870,20 @@ export class TapePanel {
           }
           state = 'PAUSED';
           updateUI();
+        }
+      } else if (msg.type === 'configUpdate') {
+        if (msg.cellWrapping !== undefined) {
+          cellWrapping = msg.cellWrapping !== false;
+        }
+        if (msg.visibleCells !== undefined) {
+          VISIBLE_CELL_WINDOW = msg.visibleCells || 50;
+          updateUI();
+        }
+        if (msg.defaultRunDelayMs !== undefined) {
+          updateSpeed(msg.defaultRunDelayMs);
+        }
+        if (msg.outputHeight !== undefined && consoleBody) {
+          consoleBody.style.maxHeight = msg.outputHeight + 'px';
         }
       }
     });

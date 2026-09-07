@@ -48,6 +48,15 @@ describe('Brainfuck Engine', () => {
     const wrapEngine = new BrainfuckEngine('-', { cellWrapping: true });
     wrapEngine.step();
     assert.equal(wrapEngine.memory[0], 255);
+
+    const clampUnderflowEngine = new BrainfuckEngine('-', { cellWrapping: false });
+    clampUnderflowEngine.step();
+    assert.equal(clampUnderflowEngine.memory[0], 0);
+
+    const clampOverflowEngine = new BrainfuckEngine('+', { cellWrapping: false });
+    clampOverflowEngine.memory[0] = 255;
+    clampOverflowEngine.step();
+    assert.equal(clampOverflowEngine.memory[0], 255);
   });
 
   it('should execute Hello World correctly', () => {
