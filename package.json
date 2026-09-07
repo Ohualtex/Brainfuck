@@ -2,7 +2,7 @@
   "name": "extension-pack-for-brainfuck",
   "displayName": "Extension Pack for Brainfuck",
   "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "Ohualtex",
   "icon": "icon.png",
   "license": "MIT",
@@ -141,6 +141,11 @@
         }
       ]
     },
+    "configurationDefaults": {
+      "[brainfuck]": {
+        "editor.maxTokenizationLineLength": 500000
+      }
+    },
     "configuration": {
       "title": "Brainfuck",
       "properties": {
@@ -158,6 +163,21 @@
           "type": "number",
           "default": 30,
           "description": "Default execution delay (ms) per instruction in visual tape auto-run."
+        },
+        "brainfuck.format.indentSize": {
+          "type": "number",
+          "default": 2,
+          "description": "Number of spaces or indentation per nested loop level when formatting."
+        },
+        "brainfuck.format.insertSpaces": {
+          "type": "boolean",
+          "default": true,
+          "description": "Indent using spaces instead of tabs when formatting."
+        },
+        "brainfuck.execution.maxSteps": {
+          "type": "number",
+          "default": 5000000,
+          "description": "Maximum execution steps in Output Channel before stopping to prevent infinite loops."
         }
       }
     }
