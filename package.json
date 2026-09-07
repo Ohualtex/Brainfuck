@@ -103,6 +103,11 @@
         "command": "brainfuck.minify",
         "title": "Brainfuck: Minify Code",
         "category": "Brainfuck"
+      },
+      {
+        "command": "brainfuck.showInterpreterMenu",
+        "title": "Brainfuck: Select Interpreter Action / Settings",
+        "category": "Brainfuck"
       }
     ],
     "menus": {
