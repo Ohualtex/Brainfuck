@@ -64,10 +64,11 @@ export function activate(context: vscode.ExtensionContext) {
 
       interpreterStatusBarItem.text = '$(chip) Brainfuck (Built-in)';
 
+      const extVersion = context.extension?.packageJSON?.version || '0.1.6';
       const tooltip = new vscode.MarkdownString('', true);
       tooltip.isTrusted = true;
       tooltip.appendMarkdown('### Brainfuck Interpreter (Built-in)\n');
-      tooltip.appendMarkdown(`- **Runtime:** Zero-dependency Built-in Engine (v0.1.5)\n`);
+      tooltip.appendMarkdown(`- **Runtime:** Zero-dependency Built-in Engine (v${extVersion})\n`);
       tooltip.appendMarkdown(`- **Memory Tape:** ${tapeSize.toLocaleString()} cells (Uint8Array)\n`);
       tooltip.appendMarkdown(`- **Cell Wrapping:** ${cellWrapping ? '8-bit Wrapping (0-255)' : 'Clamped [0, 255]'}\n`);
       tooltip.appendMarkdown(`- **Max Step Limit:** ${maxSteps.toLocaleString()} steps\n\n`);
@@ -107,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
         },
         {
           label: '$(circuit-board) Open Visual Memory Tape Debugger',
-          description: 'Step-by-step visual inspection, time-travel, and STDOUT console',
+          description: 'Step-by-step visual inspection, time-travel, and terminal output console',
           action: 'tape'
         },
         {
