@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import { parseBrainfuck } from './parser';
+import { isBrainfuckDocument } from '../webview/tapePanel';
 
 export function updateDiagnostics(
   document: vscode.TextDocument,
   collection: vscode.DiagnosticCollection
 ): void {
-  if (document.languageId !== 'brainfuck') {
+  if (!isBrainfuckDocument(document)) {
     return;
   }
 

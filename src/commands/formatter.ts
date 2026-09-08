@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { formatBrainfuckSource, minifyBrainfuckSource } from '../interpreter/formatter';
+import { isBrainfuckDocument } from '../webview/tapePanel';
 
 export { formatBrainfuckSource, minifyBrainfuckSource };
 
@@ -12,7 +13,11 @@ export class BrainfuckDocumentFormattingEditProvider implements vscode.DocumentF
       document.positionAt(0),
       document.positionAt(document.getText().length)
     );
-    const formatted = formatBrainfuckSource(document.getText(), options.tabSize, options.insertSpaces);
+    const originalText = document.getText();
+    const formatted = formatBrainfuckSource(originalText, options.tabSize, options.insertSpaces);
+    if (formatted === originalText) {
+      return [];
+    }
     return [vscode.TextEdit.replace(fullRange, formatted)];
   }
 }
@@ -37,7 +42,7 @@ async function getTargetEditor(uri?: vscode.Uri): Promise<vscode.TextEditor | un
 export async function formatActiveDocument(uri?: vscode.Uri) {
   const editor = await getTargetEditor(uri);
 
-  if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
+  if (!editor || !isBrainfuckDocument(editor.document)) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
@@ -47,8 +52,15 @@ export async function formatActiveDocument(uri?: vscode.Uri) {
   const insertSpaces = config.get<boolean>('format.insertSpaces', true);
 
   const doc = editor.document;
-  const formatted = formatBrainfuckSource(doc.getText(), indentSize, insertSpaces);
-  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+  const originalText = doc.getText();
+  const formatted = formatBrainfuckSource(originalText, indentSize, insertSpaces);
+
+  if (formatted === originalText) {
+    vscode.window.showInformationMessage('Brainfuck code is already formatted.');
+    return;
+  }
+
+  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(originalText.length));
 
   await editor.edit(editBuilder => {
     editBuilder.replace(fullRange, formatted);
@@ -60,14 +72,21 @@ export async function formatActiveDocument(uri?: vscode.Uri) {
 export async function minifyActiveDocument(uri?: vscode.Uri) {
   const editor = await getTargetEditor(uri);
 
-  if (!editor || (!editor.document.fileName.endsWith('.bf') && !editor.document.fileName.endsWith('.b') && editor.document.languageId !== 'brainfuck')) {
+  if (!editor || !isBrainfuckDocument(editor.document)) {
     vscode.window.showInformationMessage('Please open an active Brainfuck (.bf) file.');
     return;
   }
 
   const doc = editor.document;
-  const minified = minifyBrainfuckSource(doc.getText());
-  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+  const originalText = doc.getText();
+  const minified = minifyBrainfuckSource(originalText);
+
+  if (minified === originalText) {
+    vscode.window.showInformationMessage('Brainfuck code is already minified.');
+    return;
+  }
+
+  const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(originalText.length));
 
   await editor.edit(editBuilder => {
     editBuilder.replace(fullRange, minified);

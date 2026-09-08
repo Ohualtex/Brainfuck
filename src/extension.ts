@@ -6,7 +6,7 @@ import {
   minifyActiveDocument
 } from './commands/formatter';
 import { runBrainfuckCode } from './commands/runCode';
-import { TapePanel } from './webview/tapePanel';
+import { TapePanel, isBrainfuckDocument } from './webview/tapePanel';
 
 export function activate(context: vscode.ExtensionContext) {
   // 1. Diagnostics Provider (Real-time syntax checking & bracket matching)
@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(interpreterStatusBarItem);
 
   const updateInterpreterStatusBar = (editor: vscode.TextEditor | undefined) => {
-    if (editor && editor.document.languageId === 'brainfuck') {
+    if (editor && isBrainfuckDocument(editor.document)) {
       const config = vscode.workspace.getConfiguration('brainfuck');
       const tapeSize = config.get<number>('tapeSize', 30000);
       const cellWrapping = config.get<boolean>('cellWrapping', true);
@@ -161,7 +161,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(editor => {
       updateInterpreterStatusBar(editor);
-      if (editor && editor.document.languageId === 'brainfuck') {
+      if (editor && isBrainfuckDocument(editor.document)) {
         if (TapePanel.currentPanel) {
           TapePanel.currentPanel.syncWithActiveEditor();
         }
