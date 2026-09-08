@@ -41,8 +41,12 @@ export function parseBrainfuck(source: string): ParseResult {
       continue;
     }
 
-    // Ignore punctuation attached to words in comments (e.g. console., Hello,)
-    if ((ch === '.' || ch === ',' || ch === '+' || ch === '-') && i > 0 && /[a-zA-Z]/.test(source[i - 1])) {
+    // Ignore punctuation attached to words in comments (e.g. console., Hello,, .field, -5)
+    if (
+      (ch === '.' || ch === ',' || ch === '+' || ch === '-') &&
+      ((i > 0 && /[a-zA-Z0-9_]/.test(source[i - 1])) ||
+       (i + 1 < source.length && /[a-zA-Z0-9_]/.test(source[i + 1])))
+    ) {
       col++;
       continue;
     }
@@ -66,8 +70,19 @@ export function parseBrainfuck(source: string): ParseResult {
       let j = i + 1;
       while (j < source.length && /\s/.test(source[j])) j++;
       if (j < source.length && /[a-zA-Z]/.test(source[j])) {
-        while (j < source.length && source[j] !== ']') j++;
-        if (j < source.length && source[j] === ']') {
+        let depth = 1;
+        while (j < source.length) {
+          if (source[j] === '[') {
+            depth++;
+          } else if (source[j] === ']') {
+            depth--;
+            if (depth === 0) {
+              break;
+            }
+          }
+          j++;
+        }
+        if (depth === 0 && j < source.length && source[j] === ']') {
           for (let k = i; k <= j; k++) {
             if (source[k] === '\n') {
               line++;
