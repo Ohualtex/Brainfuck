@@ -183,5 +183,70 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     assert.equal(res.errors.length, 0);
     assert.ok(duration < 500, `Expected parse time under 500ms, took ${duration}ms`);
   });
+
+  it('should handle nested brackets inside header comments without syntax errors', () => {
+    const code = [
+      '[ Brainfuck Program: Author [Miyamura] - test [nested] info ]',
+      '++'
+    ].join('\n');
+    const res = parseBrainfuck(code);
+    assert.equal(res.errors.length, 0);
+    assert.equal(res.instructions.length, 2);
+    assert.equal(res.instructions[0].char, '+');
+    assert.equal(res.instructions[1].char, '+');
+  });
+
+  it('should preserve line comments and inline comments containing brackets without corrupting formatting', () => {
+    const code = [
+      '// Loop description: [ decrements counter ]',
+      '++ [',
+      '  > + < - // inline comment: [cell 1]',
+      ']'
+    ].join('\n');
+    const formatted = formatBrainfuckSource(code, 2, true);
+    assert.ok(formatted.includes('// Loop description: [ decrements counter ]'));
+    assert.ok(formatted.includes('// inline comment: [cell 1]'));
+    // Should not have split orphan comment lines
+    assert.ok(!formatted.includes('decrements counter\n]'));
+  });
+
+  it('should respect eofBehavior zero, no-change, and waiting', () => {
+    // 1. zero on EOF (default): cleanly terminates an echo loop
+    const echoCode = ',[.[-],]';
+    const echoEngine = new BrainfuckEngine(echoCode, { eofBehavior: 'zero' });
+    echoEngine.setInput('Hi');
+    const echoRes = echoEngine.runBatch(10000);
+    assert.equal(echoRes.state, ExecutionState.TERMINATED);
+    assert.equal(echoEngine.output, 'Hi');
+
+    // 2. no-change on EOF
+    const noChangeEngine = new BrainfuckEngine(',,', { eofBehavior: 'no-change' });
+    noChangeEngine.setInput('A'); // first comma gets 'A', second comma gets EOF (keeps 'A')
+    noChangeEngine.step(); // reads 'A' (65)
+    assert.equal(noChangeEngine.memory[0], 65);
+    noChangeEngine.step(); // reads EOF with no-change -> cell remains 65
+    assert.equal(noChangeEngine.memory[0], 65);
+
+    // 3. waiting on EOF
+    const waitingEngine = new BrainfuckEngine(',', { eofBehavior: 'waiting' });
+    waitingEngine.setInput('');
+    waitingEngine.step();
+    assert.equal(waitingEngine.state, ExecutionState.WAITING_INPUT);
+  });
+
+  it('should batch-prune history efficiently and allow time-travel after exceeding history limit', () => {
+    // A program that executes >1,000 steps using 8-bit wrapping
+    // '-' sets cell 0 to 255, then '[>+<-]' runs 255 loop iterations (1,277 total steps)
+    const code = '-[>+<-]';
+    const engine = new BrainfuckEngine(code, { maxHistoryLength: 100, cellWrapping: true });
+    const res = engine.runBatch(5000);
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.ok(engine.stepCount >= 1000);
+    assert.ok(engine.canStepBackward());
+    const preBackStep = engine.stepCount;
+    const steppedBack = engine.stepBackward();
+    assert.equal(steppedBack, true);
+    assert.equal(engine.stepCount, preBackStep - 1);
+  });
 });
 
