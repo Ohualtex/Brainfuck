@@ -27,10 +27,9 @@ export function updateDiagnostics(
       continue;
     }
 
-    const range = new vscode.Range(
-      new vscode.Position(err.line, err.col),
-      new vscode.Position(err.line, err.col + (err.length || 1))
-    );
+    const startPos = document.positionAt(err.offset);
+    const endPos = document.positionAt(err.offset + (err.length || 1));
+    const range = new vscode.Range(startPos, endPos);
 
     const severity = isEmptyLoop
       ? vscode.DiagnosticSeverity.Warning
@@ -66,5 +65,15 @@ export function subscribeToDocumentChanges(
 
   context.subscriptions.push(
     vscode.workspace.onDidCloseTextDocument(doc => collection.delete(doc.uri))
+  );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('brainfuck.diagnostics')) {
+        for (const doc of vscode.workspace.textDocuments) {
+          updateDiagnostics(doc, collection);
+        }
+      }
+    })
   );
 }
