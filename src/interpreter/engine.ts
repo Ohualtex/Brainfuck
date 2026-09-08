@@ -9,9 +9,13 @@ export enum ExecutionState {
   ERROR = 'ERROR'
 }
 
+export type EofBehavior = 'zero' | 'no-change' | 'waiting';
+
 export interface EngineConfig {
   tapeSize?: number;
   cellWrapping?: boolean;
+  maxHistoryLength?: number;
+  eofBehavior?: EofBehavior;
 }
 
 export interface ExecutionSnapshot {
@@ -36,15 +40,18 @@ export class BrainfuckEngine {
   private inputBuffer: number[] = [];
   private inputIndex: number = 0;
   private history: ExecutionSnapshot[] = [];
-  private readonly maxHistoryLength = 50000;
+  public readonly maxHistoryLength: number;
 
   public readonly tapeSize: number;
   public readonly cellWrapping: boolean;
+  public readonly eofBehavior: EofBehavior;
   public breakpoints = new Set<number>(); // instruction indices or source offsets
 
   constructor(sourceOrParseResult: string | ParseResult, config?: EngineConfig) {
     this.tapeSize = config?.tapeSize ?? 30000;
     this.cellWrapping = config?.cellWrapping ?? true;
+    this.eofBehavior = config?.eofBehavior ?? 'zero';
+    this.maxHistoryLength = config?.maxHistoryLength ?? 50000;
     this.memory = new Uint8Array(this.tapeSize);
 
     const parseResult = typeof sourceOrParseResult === 'string'
@@ -89,7 +96,9 @@ export class BrainfuckEngine {
 
   private recordHistory(changedCell: number, prevVal: number) {
     if (this.history.length >= this.maxHistoryLength) {
-      this.history.shift();
+      // Amortized O(1): Prune oldest 10% in a single batch rather than shifting 50,000 elements on every step
+      const pruneCount = Math.max(1, Math.floor(this.maxHistoryLength * 0.1));
+      this.history.splice(0, pruneCount);
     }
     this.history.push({
       ip: this.ip,
@@ -166,8 +175,17 @@ export class BrainfuckEngine {
           this.memory[this.ptr] = this.inputBuffer[this.inputIndex++];
           this.ip++;
         } else {
-          this.state = ExecutionState.WAITING_INPUT;
-          return false;
+          if (this.eofBehavior === 'zero') {
+            this.recordHistory(prevCellIndex, prevCellValue);
+            this.memory[this.ptr] = 0;
+            this.ip++;
+          } else if (this.eofBehavior === 'no-change') {
+            this.recordHistory(prevCellIndex, prevCellValue);
+            this.ip++;
+          } else {
+            this.state = ExecutionState.WAITING_INPUT;
+            return false;
+          }
         }
         break;
 
