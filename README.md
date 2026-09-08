@@ -2,7 +2,7 @@
 
 > **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
 
-[![Version](https://img.shields.io/badge/version-0.1.6-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.85.0-007ACC.svg)](https://code.visualstudio.com/)
