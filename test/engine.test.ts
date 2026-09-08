@@ -248,5 +248,16 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     assert.equal(steppedBack, true);
     assert.equal(engine.stepCount, preBackStep - 1);
   });
+
+  it('should support recordHistory: false for high-performance headless execution', () => {
+    const code = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.';
+    const engine = new BrainfuckEngine(code, { recordHistory: false });
+    assert.equal(engine.recordHistoryEnabled, false);
+    const res = engine.runBatch(50000);
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.equal(engine.output, 'Hello World!\n');
+    assert.equal(engine.canStepBackward(), false);
+    assert.equal(engine.stepBackward(), false);
+  });
 });
 

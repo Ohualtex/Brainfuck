@@ -16,6 +16,7 @@ export interface EngineConfig {
   cellWrapping?: boolean;
   maxHistoryLength?: number;
   eofBehavior?: EofBehavior;
+  recordHistory?: boolean;
 }
 
 export interface ExecutionSnapshot {
@@ -41,6 +42,7 @@ export class BrainfuckEngine {
   private inputIndex: number = 0;
   private history: ExecutionSnapshot[] = [];
   public readonly maxHistoryLength: number;
+  public readonly recordHistoryEnabled: boolean;
 
   public readonly tapeSize: number;
   public readonly cellWrapping: boolean;
@@ -52,6 +54,7 @@ export class BrainfuckEngine {
     this.cellWrapping = config?.cellWrapping ?? true;
     this.eofBehavior = config?.eofBehavior ?? 'zero';
     this.maxHistoryLength = config?.maxHistoryLength ?? 50000;
+    this.recordHistoryEnabled = config?.recordHistory ?? true;
     this.memory = new Uint8Array(this.tapeSize);
 
     const parseResult = typeof sourceOrParseResult === 'string'
@@ -95,6 +98,9 @@ export class BrainfuckEngine {
   }
 
   private recordHistory(changedCell: number, prevVal: number) {
+    if (!this.recordHistoryEnabled) {
+      return;
+    }
     if (this.history.length >= this.maxHistoryLength) {
       // Amortized O(1): Prune oldest 10% in a single batch rather than shifting 50,000 elements on every step
       const pruneCount = Math.max(1, Math.floor(this.maxHistoryLength * 0.1));
