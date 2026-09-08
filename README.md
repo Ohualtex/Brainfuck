@@ -98,9 +98,10 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 | `brainfuck.tapeSize` | `integer` | `30000` | Memory tape capacity in cells. |
 | `brainfuck.cellWrapping` | `boolean` | `true` | 8-bit cell wrapping (`0 - 1 = 255`, `255 + 1 = 0`). |
 | `brainfuck.defaultRunDelayMs` | `integer` | `30` | Default execution delay in milliseconds between steps during auto-run. |
-| `brainfuck.debugger.outputHeight` | `integer` | `140` | Maximum height (in pixels) for the terminal output console in the visual debugger. |
+| `brainfuck.debugger.outputHeight` | `integer` | `150` | Maximum height (in pixels) for the terminal output console in the visual debugger. |
 | `brainfuck.debugger.syncEditorOnStep` | `boolean` | `true` | Highlight the active instruction in the editor during debugger execution. |
 | `brainfuck.debugger.visibleCells` | `integer` | `50` | Number of cells displayed in the memory tape conveyor viewport. |
+| `brainfuck.debugger.visibleInstructions` | `integer` | `100` | Number of instruction characters displayed in the debugger instruction stream around the active instruction. |
 | `brainfuck.execution.clearPreviousOutput` | `boolean` | `false` | Clear the Brainfuck Output channel before each execution run. |
 | `brainfuck.execution.showSummary` | `boolean` | `true` | Print execution metrics (step count, elapsed time, final cell) upon completion. |
 | `brainfuck.diagnostics.enable` | `boolean` | `true` | Enable real-time syntax checking and bracket balancing diagnostics. |

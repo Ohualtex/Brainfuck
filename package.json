@@ -172,7 +172,7 @@
         },
         "brainfuck.debugger.outputHeight": {
           "type": "number",
-          "default": 140,
+          "default": 150,
           "description": "Height in pixels of the visual debugger terminal output console."
         },
         "brainfuck.debugger.syncEditorOnStep": {
@@ -184,6 +184,11 @@
           "type": "number",
           "default": 50,
           "description": "Number of tape memory cells visible in the viewport around the active pointer."
+        },
+        "brainfuck.debugger.visibleInstructions": {
+          "type": "number",
+          "default": 100,
+          "description": "Total number of instruction characters visible in the debugger instruction stream around the active instruction."
         },
         "brainfuck.format.indentSize": {
           "type": "number",

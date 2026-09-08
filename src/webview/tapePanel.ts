@@ -176,8 +176,9 @@ export class TapePanel {
             tapeSize: config.get<number>('tapeSize', 30000),
             cellWrapping: config.get<boolean>('cellWrapping', true),
             defaultRunDelayMs: config.get<number>('defaultRunDelayMs', 30),
-            outputHeight: config.get<number>('debugger.outputHeight', 140),
+            outputHeight: config.get<number>('debugger.outputHeight', 150),
             visibleCells: config.get<number>('debugger.visibleCells', 50),
+            visibleInstructions: config.get<number>('debugger.visibleInstructions', 100),
             syncEditorOnStep: config.get<boolean>('debugger.syncEditorOnStep', true)
           });
         }
@@ -346,8 +347,9 @@ export class TapePanel {
     const tapeSize = config.get<number>('tapeSize', 30000);
     const cellWrapping = config.get<boolean>('cellWrapping', true);
     const defaultRunDelayMs = config.get<number>('defaultRunDelayMs', 30);
-    const outputHeight = config.get<number>('debugger.outputHeight', 140);
+    const outputHeight = config.get<number>('debugger.outputHeight', 150);
     const visibleCells = config.get<number>('debugger.visibleCells', 50);
+    const visibleInstructions = config.get<number>('debugger.visibleInstructions', 100);
     const syncEditorOnStep = config.get<boolean>('debugger.syncEditorOnStep', true);
 
     const initialJson = JSON.stringify({
@@ -358,6 +360,7 @@ export class TapePanel {
       defaultRunDelayMs,
       outputHeight,
       visibleCells,
+      visibleInstructions,
       syncEditorOnStep
     }).replace(/</g, '\\u003c');
 
@@ -1214,6 +1217,7 @@ export class TapePanel {
 
     // View Window: Number of cells visible around pointer
     let VISIBLE_CELL_WINDOW = initialData.visibleCells || 50;
+    let VISIBLE_INSTRUCTIONS = initialData.visibleInstructions || 100;
     let currentWindowStart = 0;
     let editingCell = null;
 
@@ -1269,14 +1273,22 @@ export class TapePanel {
 
         const ch = src[i];
 
-        // Ignore punctuation attached to words in comments (e.g. console., Hello,)
-        if ((ch === '.' || ch === ',' || ch === '+' || ch === '-') && i > 0 && /[a-zA-Z]/.test(src[i - 1])) {
+        // Ignore punctuation attached to words in comments (e.g. console., Hello,, .property, -5)
+        if (
+          (ch === '.' || ch === ',' || ch === '+' || ch === '-') &&
+          ((i > 0 && /[a-zA-Z0-9_]/.test(src[i - 1])) ||
+           (i + 1 < src.length && /[a-zA-Z0-9_]/.test(src[i + 1])))
+        ) {
           col++;
           continue;
         }
 
-        // Skip line comments starting with // or ;
-        if ((ch === '/' && src[i + 1] === '/') || ch === ';') {
+        // Skip line comments starting with // or ; or # with space/tab
+        if (
+          (ch === '/' && src[i + 1] === '/') ||
+          ch === ';' ||
+          (ch === '#' && (src[i + 1] === ' ' || src[i + 1] === '\t'))
+        ) {
           while (i < src.length && src.charCodeAt(i) !== 10) i++;
           line++;
           col = 0;
@@ -1288,8 +1300,17 @@ export class TapePanel {
           let j = i + 1;
           while (j < src.length && src.charCodeAt(j) <= 32) j++;
           if (j < src.length && /[a-zA-Z]/.test(src[j])) {
-            while (j < src.length && src[j] !== ']') j++;
-            if (j < src.length && src[j] === ']') {
+            let depth = 1;
+            while (j < src.length) {
+              if (src[j] === '[') {
+                depth++;
+              } else if (src[j] === ']') {
+                depth--;
+                if (depth === 0) break;
+              }
+              j++;
+            }
+            if (depth === 0 && j < src.length && src[j] === ']') {
               i = j;
               continue;
             }
@@ -1334,9 +1355,9 @@ export class TapePanel {
 
       streamCounter.textContent = (ip + 1) + ' / ' + instructions.length;
 
-      // Windowed render around IP for 10,000+ length instructions
-      const windowSize = 40;
-      const start = Math.max(0, ip - 15);
+      // Windowed render around IP (configurable, default: 100 instructions)
+      const windowSize = VISIBLE_INSTRUCTIONS;
+      const start = Math.max(0, Math.min(ip - Math.floor(windowSize / 2), instructions.length - windowSize));
       const end = Math.min(instructions.length, start + windowSize);
 
       let html = '';
@@ -1545,7 +1566,7 @@ export class TapePanel {
         cellVal: prevVal,
         outLen: prevOutLen
       });
-      if (history.length > 50000) history.shift();
+      if (history.length > 50000) history.splice(0, 5000);
 
       switch (instr.char) {
         case '>':
@@ -1919,6 +1940,10 @@ export class TapePanel {
         if (msg.visibleCells !== undefined) {
           VISIBLE_CELL_WINDOW = msg.visibleCells || 50;
           updateUI();
+        }
+        if (msg.visibleInstructions !== undefined) {
+          VISIBLE_INSTRUCTIONS = msg.visibleInstructions || 100;
+          renderStream();
         }
         if (msg.defaultRunDelayMs !== undefined) {
           updateSpeed(msg.defaultRunDelayMs);
