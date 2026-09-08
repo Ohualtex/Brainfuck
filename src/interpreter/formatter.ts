@@ -33,19 +33,20 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
     // Check if entire line is a comment
     if (
       trimmed.startsWith('//') ||
-      trimmed.startsWith(';') ||
-      trimmed.startsWith('# ') ||
-      trimmed === '#'
+      trimmed.startsWith('/*') ||
+      trimmed.startsWith('*') ||
+      trimmed.endsWith('*/') ||
+      trimmed.startsWith(';')
     ) {
       flushLine();
       formatted += indentStr.repeat(Math.max(0, indentLevel)) + trimmed + '\n';
       continue;
     }
 
-    // Check for inline trailing comments (//, ;, or # with leading whitespace)
+    // Check for inline trailing comments (//, /* ... */, or ;)
     let codePart = rawLine;
     let commentPart = '';
-    const commentMatch = /(?:\/\/|;|\s#\s).*/.exec(rawLine);
+    const commentMatch = /(?:\/\/|\/\*|;).*/.exec(rawLine);
     if (commentMatch && commentMatch.index !== undefined) {
       codePart = rawLine.slice(0, commentMatch.index);
       commentPart = commentMatch[0].trim();

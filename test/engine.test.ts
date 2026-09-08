@@ -119,7 +119,7 @@ describe('Brainfuck Formatter & Minifier', () => {
     const code = [
       '// Add 5: +++++',
       '; Reset to zero: [-]',
-      '# Comment with +++',
+      '/* Block comment with +++ and [-] */',
       '++[>+<-]'
     ].join('\n');
     const min = minifyBrainfuckSource(code);
@@ -164,14 +164,17 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     assert.equal(resErr.errors[0].line, 0); // '[' was on line 0
   });
 
-  it('should treat # with whitespace as comment and bare # as breakpoint instruction', () => {
+  it('should treat /* */ and // as comments and always treat # as breakpoint instruction', () => {
     const code = [
-      '# This is a comment with +++',
+      '// This is a line comment with +++',
+      '/* This is a multi-line',
+      '   block comment with [->+<] and ### */',
+      '# breakpoint line with trailing space ',
       '++#--'
     ].join('\n');
     const res = parseBrainfuck(code);
     const chars = res.instructions.map(i => i.char).join('');
-    assert.equal(chars, '++#--');
+    assert.equal(chars, '#++#--');
   });
 
   it('should parse 135,000 character pure Brainfuck program swiftly without crashing', () => {
@@ -258,6 +261,24 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     assert.equal(engine.output, 'Hello World!\n');
     assert.equal(engine.canStepBackward(), false);
     assert.equal(engine.stepBackward(), false);
+  });
+
+  it('should handle multi-line /* */ block comments containing brackets and operators without syntax errors', () => {
+    const code = [
+      '/* Multiline block comment',
+      '   with tricky characters: [->+<] and +++ ---',
+      '   and nested-looking brackets [ [ [ ] ] ]',
+      '*/',
+      '++[>+<-]>.'
+    ].join('\n');
+    const parseRes = parseBrainfuck(code);
+    assert.equal(parseRes.errors.length, 0);
+    const chars = parseRes.instructions.map(i => i.char).join('');
+    assert.equal(chars, '++[>+<-]>.');
+
+    const formatted = formatBrainfuckSource(code);
+    assert.ok(formatted.includes('/* Multiline block comment'));
+    assert.ok(formatted.includes('++[\n  >+<-\n]'));
   });
 });
 

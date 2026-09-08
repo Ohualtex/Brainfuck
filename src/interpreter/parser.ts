@@ -51,12 +51,29 @@ export function parseBrainfuck(source: string): ParseResult {
       continue;
     }
 
-    // Skip line comments starting with // or ; or # (when followed by space/tab)
-    if (
-      (ch === '/' && source[i + 1] === '/') ||
-      ch === ';' ||
-      (ch === '#' && (source[i + 1] === ' ' || source[i + 1] === '\t'))
-    ) {
+    // Skip multi-line block comments /* ... */
+    if (ch === '/' && source[i + 1] === '*') {
+      let j = i + 2;
+      while (j < source.length && !(source[j] === '*' && source[j + 1] === '/')) {
+        if (source[j] === '\n') {
+          line++;
+          col = 0;
+        } else {
+          col++;
+        }
+        j++;
+      }
+      if (j < source.length - 1 && source[j] === '*' && source[j + 1] === '/') {
+        col += 2;
+        i = j + 1;
+      } else {
+        i = source.length;
+      }
+      continue;
+    }
+
+    // Skip line comments starting with // or ;
+    if ((ch === '/' && source[i + 1] === '/') || ch === ';') {
       while (i < source.length && source[i] !== '\n') i++;
       if (i < source.length && source[i] === '\n') {
         line++;

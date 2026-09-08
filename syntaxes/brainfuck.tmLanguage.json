@@ -4,6 +4,9 @@
   "scopeName": "source.brainfuck",
   "patterns": [
     {
+      "include": "#comment-block-c"
+    },
+    {
       "include": "#comment-block"
     },
     {
@@ -17,6 +20,21 @@
     }
   ],
   "repository": {
+    "comment-block-c": {
+      "name": "comment.block.c.brainfuck",
+      "begin": "/\\*",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.begin.brainfuck"
+        }
+      },
+      "end": "\\*/",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.end.brainfuck"
+        }
+      }
+    },
     "comment-block": {
       "name": "comment.block.brainfuck",
       "begin": "\\[(?=[\\s]*[a-zA-Z])",
@@ -47,10 +65,6 @@
         {
           "name": "comment.line.semicolon.brainfuck",
           "match": ";.*$"
-        },
-        {
-          "name": "comment.line.hash.brainfuck",
-          "match": "#[\\s]+.*$"
         }
       ]
     },
