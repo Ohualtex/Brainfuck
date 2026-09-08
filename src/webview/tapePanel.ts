@@ -1378,18 +1378,6 @@ export class TapePanel {
       }
 
       streamWrapper.innerHTML = html;
-
-      // Click instruction chip to jump directly to it
-      document.querySelectorAll('.instr-chip').forEach(el => {
-        el.addEventListener('click', () => {
-          const idx = parseInt(el.getAttribute('data-idx'), 10);
-          if (!isNaN(idx) && idx >= 0 && idx < instructions.length) {
-            pause();
-            ip = idx;
-            updateUI();
-          }
-        });
-      });
     }
 
     function renderTape() {
@@ -1397,11 +1385,12 @@ export class TapePanel {
       const half = Math.floor(VISIBLE_CELL_WINDOW / 2);
       let start = Math.max(0, ptr - half);
       if (start + VISIBLE_CELL_WINDOW > TAPE_SIZE) {
-        start = TAPE_SIZE - VISIBLE_CELL_WINDOW;
+        start = Math.max(0, TAPE_SIZE - VISIBLE_CELL_WINDOW);
       }
+      const end = Math.min(TAPE_SIZE, start + VISIBLE_CELL_WINDOW);
 
       let html = '';
-      for (let i = start; i < start + VISIBLE_CELL_WINDOW; i++) {
+      for (let i = start; i < end; i++) {
         const val = memory[i];
         const isActive = (i === ptr);
         const isNonZero = val > 0;
@@ -1439,25 +1428,6 @@ export class TapePanel {
       }
 
       tapeConveyor.innerHTML = html;
-
-      // Attach click to edit cell value directly
-      document.querySelectorAll('.cell-card').forEach(el => {
-        el.addEventListener('click', (e) => {
-          if (e.target && e.target.classList.contains('cell-edit-input')) return;
-          const cIdx = parseInt(el.getAttribute('data-cell'), 10);
-          if (editingCell === cIdx) return;
-          ptr = cIdx;
-          editingCell = cIdx;
-          updateUI();
-          setTimeout(() => {
-            const input = tapeConveyor.querySelector('.cell-edit-input');
-            if (input) {
-              input.focus();
-              input.select();
-            }
-          }, 30);
-        });
-      });
 
       const activeEditInput = tapeConveyor.querySelector('.cell-edit-input');
       if (activeEditInput) {
@@ -1685,6 +1655,11 @@ export class TapePanel {
     }
 
     function play() {
+      if (isRunning) return;
+      if (runTimer) {
+        clearTimeout(runTimer);
+        runTimer = null;
+      }
       if (ip >= instructions.length) {
         reset();
       }
@@ -1723,6 +1698,38 @@ export class TapePanel {
     btnPlayPause.addEventListener('click', () => {
       if (isRunning) pause();
       else play();
+    });
+
+    // Event delegation: Jump directly when clicking instruction stream chips
+    streamWrapper.addEventListener('click', (e) => {
+      const chip = e.target.closest('.instr-chip');
+      if (chip) {
+        const idx = parseInt(chip.getAttribute('data-idx'), 10);
+        if (!isNaN(idx) && idx >= 0 && idx < instructions.length) {
+          pause();
+          ip = idx;
+          updateUI();
+        }
+      }
+    });
+
+    // Event delegation: Select / Edit cell when clicking memory tape cards
+    tapeConveyor.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('cell-edit-input')) return;
+      const card = e.target.closest('.cell-card');
+      if (!card) return;
+      const cIdx = parseInt(card.getAttribute('data-cell'), 10);
+      if (isNaN(cIdx) || editingCell === cIdx) return;
+      ptr = cIdx;
+      editingCell = cIdx;
+      updateUI();
+      setTimeout(() => {
+        const input = tapeConveyor.querySelector('.cell-edit-input');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 30);
     });
 
     btnStepNext.addEventListener('click', () => {
