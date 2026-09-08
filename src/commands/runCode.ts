@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { BrainfuckEngine, ExecutionState } from '../interpreter/engine';
 import { parseBrainfuck } from '../interpreter/parser';
+import { isBrainfuckDocument } from '../webview/tapePanel';
 
 let outputChannel: vscode.OutputChannel | undefined;
 
@@ -28,7 +29,7 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
 
   if (!doc) {
     const editor = vscode.window.activeTextEditor;
-    if (editor && (editor.document.languageId === 'brainfuck' || editor.document.fileName.endsWith('.bf') || editor.document.fileName.endsWith('.b'))) {
+    if (editor && isBrainfuckDocument(editor.document)) {
       doc = editor.document;
     }
   }
@@ -79,7 +80,12 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
   const tapeSize = config.get<number>('tapeSize', 30000);
   const cellWrapping = config.get<boolean>('cellWrapping', true);
 
-  const engine = new BrainfuckEngine(parseResult, { tapeSize, cellWrapping, eofBehavior: 'zero' });
+  const engine = new BrainfuckEngine(parseResult, {
+    tapeSize,
+    cellWrapping,
+    eofBehavior: 'zero',
+    recordHistory: false
+  });
   if (hasInput) {
     engine.setInput(userInput);
   }
@@ -94,7 +100,8 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     engine.state !== ExecutionState.WAITING_INPUT &&
     steps < maxSteps
   ) {
-    const batch = engine.runBatch(10000);
+    const batchSteps = Math.min(10000, maxSteps - steps);
+    const batch = engine.runBatch(batchSteps);
     steps += batch.stepsExecuted;
   }
 
@@ -108,15 +115,19 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
 
   if (showSummary) {
     channel.appendLine('----------------------------------------------------');
-    if (steps >= maxSteps) {
-      channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
+    if (engine.state === ExecutionState.TERMINATED) {
+      channel.appendLine(
+        `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
+      );
     } else if (engine.state === ExecutionState.ERROR) {
       channel.appendLine(`[ERROR] ${engine.errorMessage}`);
     } else if (engine.state === ExecutionState.WAITING_INPUT) {
       channel.appendLine(`[WAITING] Program paused: waiting for additional input.`);
+    } else if (steps >= maxSteps) {
+      channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
     } else {
       channel.appendLine(
-        `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
+        `[STOPPED] Execution stopped at step ${steps} | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
       );
     }
   }
