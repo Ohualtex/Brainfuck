@@ -79,8 +79,8 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
   const tapeSize = config.get<number>('tapeSize', 30000);
   const cellWrapping = config.get<boolean>('cellWrapping', true);
 
-  const engine = new BrainfuckEngine(parseResult, { tapeSize, cellWrapping });
-  if (userInput) {
+  const engine = new BrainfuckEngine(parseResult, { tapeSize, cellWrapping, eofBehavior: 'zero' });
+  if (hasInput) {
     engine.setInput(userInput);
   }
 
@@ -112,6 +112,8 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
       channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
     } else if (engine.state === ExecutionState.ERROR) {
       channel.appendLine(`[ERROR] ${engine.errorMessage}`);
+    } else if (engine.state === ExecutionState.WAITING_INPUT) {
+      channel.appendLine(`[WAITING] Program paused: waiting for additional input.`);
     } else {
       channel.appendLine(
         `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
