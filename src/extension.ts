@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       interpreterStatusBarItem.text = '$(chip) Brainfuck (Built-in)';
 
-      const extVersion = context.extension?.packageJSON?.version || '0.1.7';
+      const extVersion = context.extension?.packageJSON?.version || '1.0.0';
       const tooltip = new vscode.MarkdownString('', true);
       tooltip.isTrusted = true;
       tooltip.appendMarkdown('### Brainfuck Interpreter (Built-in)\n');
