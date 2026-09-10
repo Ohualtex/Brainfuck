@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { parseBrainfuck } from '../src/interpreter/parser';
 import { BrainfuckEngine, ExecutionState } from '../src/interpreter/engine';
 import { formatBrainfuckSource, minifyBrainfuckSource } from '../src/interpreter/formatter';
+import { getHoverInfo } from '../src/interpreter/hover';
 
 describe('Brainfuck Parser', () => {
   it('should parse instructions and ignore whitespace/comments', () => {
@@ -279,6 +280,104 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     const formatted = formatBrainfuckSource(code);
     assert.ok(formatted.includes('/* Multiline block comment'));
     assert.ok(formatted.includes('++[\n  >+<-\n]'));
+  });
+});
+
+describe('Brainfuck Hover Provider', () => {
+  it('should calculate loop bracket matching, depth and inner count for [ and ]', () => {
+    const code = '++[\n  >+<-\n]';
+    // line 0, col 2 is '['
+    const openHover = getHoverInfo(code, 0, 2);
+    assert.ok(openHover);
+    assert.match(openHover.title, /Loop Start/);
+    assert.ok(openHover.details?.some(d => d.includes('Line 3, Col 1')));
+    assert.ok(openHover.details?.some(d => d.includes('Depth: **1**')));
+
+    // line 2, col 0 is ']'
+    const closeHover = getHoverInfo(code, 2, 0);
+    assert.ok(closeHover);
+    assert.match(closeHover.title, /Loop End/);
+    assert.ok(closeHover.details?.some(d => d.includes('Line 1, Col 3')));
+  });
+
+  it('should detect Clear Cell idiom [-]', () => {
+    const code = '[-]';
+    const hover = getHoverInfo(code, 0, 1); // hovering over '-'
+    assert.ok(hover);
+    assert.match(hover.title, /Clear Cell/);
+    assert.equal(hover.codeSnippet, '*ptr = 0;');
+    assert.equal(hover.range.startCol, 0);
+    assert.equal(hover.range.endCol, 3);
+  });
+
+  it('should detect Move Cell idiom [->+<]', () => {
+    const code = '[->+<]';
+    const hover = getHoverInfo(code, 0, 3); // hovering over '+'
+    assert.ok(hover);
+    assert.match(hover.title, /Move \/ Add Cell/);
+    assert.equal(hover.range.startCol, 0);
+    assert.equal(hover.range.endCol, 6);
+  });
+
+  it('should calculate run-length value adjustment (+/-) with ASCII and Hex', () => {
+    // 7 '+' increments
+    const code = '+++++++';
+    const hover = getHoverInfo(code, 0, 3);
+    assert.ok(hover);
+    assert.match(hover.title, /\+7/);
+    assert.ok(hover.details?.some(d => d.includes('Hex Equivalent (mod 256): `0x07`')));
+    assert.ok(hover.details?.some(d => d.includes('\\a')));
+
+    // 65 '+' increments -> 'A'
+    const codeA = '+'.repeat(65);
+    const hoverA = getHoverInfo(codeA, 0, 10);
+    assert.ok(hoverA);
+    assert.ok(hoverA.details?.some(d => d.includes("'A'")));
+  });
+
+  it('should calculate run-length pointer shift (>/<)', () => {
+    const code = '>>>';
+    const hover = getHoverInfo(code, 0, 1);
+    assert.ok(hover);
+    assert.match(hover.title, /\+3/);
+    assert.ok(hover.description.includes('right'));
+  });
+
+  it('should provide hover info for I/O and Breakpoint instructions', () => {
+    const code = '. , #';
+    const dotHover = getHoverInfo(code, 0, 0);
+    assert.ok(dotHover);
+    assert.match(dotHover.title, /Output Byte/);
+
+    const commaHover = getHoverInfo(code, 0, 2);
+    assert.ok(commaHover);
+    assert.match(commaHover.title, /Input Byte/);
+
+    const bpHover = getHoverInfo(code, 0, 4);
+    assert.ok(bpHover);
+    assert.match(bpHover.title, /Breakpoint/);
+  });
+
+  it('should provide hover info for line comments and block comments', () => {
+    const code = [
+      '++ // Line comment here',
+      '/* Block comment',
+      '   spanning lines */'
+    ].join('\n');
+
+    const lineCommentHover = getHoverInfo(code, 0, 6);
+    assert.ok(lineCommentHover);
+    assert.match(lineCommentHover.title, /Line Comment/);
+
+    const blockCommentHover = getHoverInfo(code, 1, 4);
+    assert.ok(blockCommentHover);
+    assert.match(blockCommentHover.title, /Block Comment/);
+  });
+
+  it('should return null when hovering on whitespace or out of bounds', () => {
+    const code = '++   --';
+    assert.equal(getHoverInfo(code, 0, 3), null);
+    assert.equal(getHoverInfo(code, 5, 0), null);
   });
 });
 
