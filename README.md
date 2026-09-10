@@ -2,7 +2,7 @@
 
 > **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
 
-[![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.85.0-007ACC.svg)](https://code.visualstudio.com/)
@@ -22,16 +22,28 @@ A standalone, batteries-included development environment for Visual Studio Code.
   - **I/O Commands (`.`, `,`):** Red / Pink
   - **Loop Brackets (`[`, `]`):** Yellow / Amber
   - **Debugger Breakpoint (`#`):** Magenta
-  - **Comments:** All other characters are styled as muted comments.
+  - **Comments:** Standard `//` single-line and `/* ... */` multi-line block comments, plus free-form text.
 - **Clean Minimap:** Optimized folding configuration prevents loop brackets from inflating into oversized block markers on the VS Code minimap.
 - Bracket pair colorization and auto-closing bracket support.
 
-### 2. 🔍 Real-Time Diagnostics
+### 2. 💡 Intelligent Hover Provider & Idiom Inspector
+Hover over any instruction, loop bracket, or code sequence to inspect rich, formatted information in real-time:
+- **Loop Bracket Pairing & Jump Targets:** Hovering over `[` or `]` reveals matching coordinates (Line, Column), nested loop depth, inner instruction count, and jump condition (`while (*ptr != 0)`).
+- **Cell Value Adjustment Tooltips:** Hovering over consecutive `+` / `-` clusters reveals net value change (e.g. `+7`), hex equivalent (`0x07`), and ASCII character representation (e.g. `'A'`, `'\n'`, `'\t'`).
+- **Pointer Shifts:** Hovering over `>` / `<` sequences shows net pointer offset and movement direction (`Move Right/Left X cells`).
+- **Brainfuck Idiom Recognition:** Automatically detects and explains canonical Brainfuck algorithms with C-equivalents:
+  - `[-]` / `[+]` $\rightarrow$ **Clear Cell** (`*ptr = 0;`)
+  - `[->+<]` / `[-<+>]` $\rightarrow$ **Move / Add Cell** (`*(ptr + 1) += *ptr; *ptr = 0;`)
+  - `[->+>+<<]` $\rightarrow$ **Copy Cell** (`ptr[1] += *ptr; ptr[2] += *ptr; *ptr = 0;`)
+  - `[>]` / `[<]` $\rightarrow$ **Scan to Zero** (`while (*ptr) ptr++;`)
+- **I/O & Breakpoint Details:** Inspect `.`, `,`, `#` (pauses visual tape debugger), and comment blocks.
+
+### 3. 🔍 Real-Time Diagnostics
 - **Unclosed loop bracket (`[`):** Flagged with red underlines when no matching `]` exists.
 - **Unmatched closing bracket (`]`):** Flagged immediately when no preceding `[` exists.
 - **Empty loop warning (`[]`):** Generates a warning diagnostic for potential infinite loops.
 
-### 3. 📼 Visual Memory Tape & Time-Travel Debugger
+### 4. 📼 Visual Memory Tape & Time-Travel Debugger
 High-performance, smooth memory visualizer built with native VS Code design tokens:
 - **Ultra-Fast Adaptive Engine:** Adjustable step delay from `1ms` to `1000ms`. At high speeds, an adaptive batching scheduler executes up to 1,000+ steps per second while maintaining smooth 60fps DOM rendering.
 - **Direct Cell Jump Control:** Interactive `Cell: [#ptr]` inline input with boundary clamping (`0` to `29999`) to instantly inspect any memory location.
@@ -46,15 +58,15 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - **Direct Cell Editing:** Click any memory cell on the tape to directly modify its value (0 - 255).
 - **Dedicated Terminal Output Console:** Full-width collapsible output console styled in native VS Code terminal design, supporting multi-line streams, monospace ASCII rendering, auto-scroll, 1-click clipboard copy, buffer wipe, word wrap toggle, and adjustable panel height.
 
-### 4. 🚀 Output Channel Runner
+### 5. 🚀 Output Channel Runner
 - Execute Brainfuck code instantly via the editor title bar Run button or the command palette (`Brainfuck: Run Code in Output Channel`).
 - Reports total execution steps, duration in milliseconds, and final memory state.
 
-### 5. 🧹 Formatter & Minifier
+### 6. 🧹 Formatter & Minifier
 - **Format Document (`Shift+Alt+F`):** Automatically indents loop blocks (`[` and `]`) for readability.
 - **Minify Code:** Strips comments and whitespace to produce compact Brainfuck code.
 
-### 6. 📝 Built-in Snippets
+### 7. 📝 Built-in Snippets
 - `bf-hello` / `hello`: Standard Hello World program.
 - `bf-clear` / `clear`: Cell reset `[-]`.
 - `bf-move`: Move cell value `[->+<]`.
@@ -62,7 +74,7 @@ High-performance, smooth memory visualizer built with native VS Code design toke
 - `bf-add` / `bf-sub`: Addition and subtraction between cells.
 - `bf-mult`: Multiplication loop template.
 
-### 7. 🎛️ Explorer Icons, Title Bar & Interpreter Status Bar
+### 8. 🎛️ Explorer Icons, Title Bar & Interpreter Status Bar
 - **Branded Explorer Icons:** Custom transparent `>+` badge icons for `.bf` and `.b` files in the VS Code explorer tree and editor tabs.
 - **Dedicated Icon Theme:** Includes the official `Brainfuck (Official)` icon theme.
 - **Editor Title Bar Integration:** Dedicated `$(circuit-board)` icon in the editor navigation bar for instant 1-click visual memory tape access.
