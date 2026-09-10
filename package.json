@@ -224,6 +224,11 @@
           "type": "boolean",
           "default": true,
           "description": "Display warning diagnostics for empty loop constructs ([])."
+        },
+        "brainfuck.hover.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rich hover tooltips for loop bracket matching, value adjustments, pointer shifts, and Brainfuck idioms."
         }
       }
     }

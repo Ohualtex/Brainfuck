@@ -8,6 +8,8 @@ import {
 import { runBrainfuckCode } from './commands/runCode';
 import { TapePanel, isBrainfuckDocument } from './webview/tapePanel';
 
+import { BrainfuckHoverProvider } from './providers/hoverProvider';
+
 export function activate(context: vscode.ExtensionContext) {
   // 1. Diagnostics Provider (Real-time syntax checking & bracket matching)
   const diagnosticCollection = vscode.languages.createDiagnosticCollection('brainfuck');
@@ -19,6 +21,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentFormattingEditProvider(
       'brainfuck',
       new BrainfuckDocumentFormattingEditProvider()
+    )
+  );
+
+  // 3. Hover Provider (Bracket pairing, value adjustments, pointer shifts, idioms)
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(
+      'brainfuck',
+      new BrainfuckHoverProvider()
     )
   );
 
