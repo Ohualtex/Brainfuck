@@ -2,7 +2,7 @@
   "name": "extension-pack-for-brainfuck",
   "displayName": "Extension Pack for Brainfuck",
   "description": "The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "Ohualtex",
   "icon": "icon.png",
   "license": "MIT",
