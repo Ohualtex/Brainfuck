@@ -7,6 +7,7 @@ import { parseBrainfuck } from '../src/interpreter/parser';
 import { BrainfuckEngine, ExecutionState } from '../src/interpreter/engine';
 import { formatBrainfuckSource, minifyBrainfuckSource } from '../src/interpreter/formatter';
 import { getHoverInfo } from '../src/interpreter/hover';
+import { compileToIR, FastBrainfuckEngine, IROpType } from '../src/interpreter/ir';
 
 describe('Brainfuck Parser', () => {
   it('should parse instructions and ignore whitespace/comments', () => {
@@ -380,4 +381,98 @@ describe('Brainfuck Hover Provider', () => {
     assert.equal(getHoverInfo(code, 5, 0), null);
   });
 });
+
+describe('Brainfuck IR & Optimization Engine', () => {
+  it('should contract consecutive + and - into single ADD operations (RLE)', () => {
+    const parsed = parseBrainfuck('+++++---'); // net +2
+    const ir = compileToIR(parsed.instructions, true);
+    assert.equal(ir.length, 1);
+    assert.equal(ir[0].type, IROpType.ADD);
+    assert.equal(ir[0].value, 2);
+  });
+
+  it('should contract consecutive > and < into single MOVE operations (RLE)', () => {
+    const parsed = parseBrainfuck('>>>><<'); // net +2
+    const ir = compileToIR(parsed.instructions, true);
+    assert.equal(ir.length, 1);
+    assert.equal(ir[0].type, IROpType.MOVE);
+    assert.equal(ir[0].value, 2);
+  });
+
+  it('should fold clear loops [-] and [+] into a single SET 0 operation', () => {
+    const parsedMinus = parseBrainfuck('[-]+++');
+    const irMinus = compileToIR(parsedMinus.instructions, true);
+    assert.equal(irMinus[0].type, IROpType.SET);
+    assert.equal(irMinus[0].value, 0);
+    assert.equal(irMinus[1].type, IROpType.ADD);
+    assert.equal(irMinus[1].value, 3);
+
+    const parsedPlus = parseBrainfuck('[+]');
+    const irPlus = compileToIR(parsedPlus.instructions, true);
+    assert.equal(irPlus[0].type, IROpType.SET);
+    assert.equal(irPlus[0].value, 0);
+  });
+
+  it('should fold scan loops [>] and [<] into SCAN operations', () => {
+    const parsedRight = parseBrainfuck('[>]');
+    const irRight = compileToIR(parsedRight.instructions, true);
+    assert.equal(irRight.length, 1);
+    assert.equal(irRight[0].type, IROpType.SCAN);
+    assert.equal(irRight[0].value, 1);
+
+    const parsedLeft = parseBrainfuck('[<]');
+    const irLeft = compileToIR(parsedLeft.instructions, true);
+    assert.equal(irLeft.length, 1);
+    assert.equal(irLeft[0].type, IROpType.SCAN);
+    assert.equal(irLeft[0].value, -1);
+  });
+
+  it('should fold multiplication and transfer loops [->+<] and [->+++<]', () => {
+    const parsed = parseBrainfuck('[->+++<]');
+    const ir = compileToIR(parsed.instructions, true);
+    assert.equal(ir.length, 2);
+    assert.equal(ir[0].type, IROpType.ADD_MULT);
+    assert.deepEqual(ir[0].multTargets, [{ offset: 1, factor: 3 }]);
+    assert.equal(ir[1].type, IROpType.SET);
+    assert.equal(ir[1].value, 0);
+  });
+
+  it('should execute Hello World correctly with FastBrainfuckEngine', () => {
+    const code = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.';
+    const fastEngine = new FastBrainfuckEngine(code);
+    const res = fastEngine.execute();
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.equal(fastEngine.output, 'Hello World!\n');
+    assert.ok(res.ops < 500);
+  });
+
+  it('should execute addition and multiplication accurately in FastBrainfuckEngine', () => {
+    // Cell 0: 6, Cell 1: 7 -> Cell 1 should become 42 via [->+++++++<]
+    const code = '++++++[->+++++++<]>';
+    const engine = new FastBrainfuckEngine(code);
+    const res = engine.execute();
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.equal(engine.memory[1], 42);
+    assert.equal(engine.memory[0], 0);
+  });
+
+  it('should respect cellWrapping in FastBrainfuckEngine', () => {
+    const wrapEngine = new FastBrainfuckEngine('-', { cellWrapping: true });
+    wrapEngine.execute();
+    assert.equal(wrapEngine.memory[0], 255);
+
+    const clampEngine = new FastBrainfuckEngine('-', { cellWrapping: false });
+    clampEngine.execute();
+    assert.equal(clampEngine.memory[0], 0);
+  });
+
+  it('should handle I/O and interactive input correctly in FastBrainfuckEngine', () => {
+    const echoEngine = new FastBrainfuckEngine(',.,.');
+    echoEngine.setInput('OK');
+    const res = echoEngine.execute();
+    assert.equal(res.state, ExecutionState.TERMINATED);
+    assert.equal(echoEngine.output, 'OK');
+  });
+});
+
 

@@ -17,6 +17,7 @@ export interface EngineConfig {
   maxHistoryLength?: number;
   eofBehavior?: EofBehavior;
   recordHistory?: boolean;
+  input?: string;
 }
 
 export interface ExecutionSnapshot {
