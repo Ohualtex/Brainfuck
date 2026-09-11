@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { BrainfuckEngine, ExecutionState } from '../interpreter/engine';
 import { parseBrainfuck } from '../interpreter/parser';
+import { FastBrainfuckEngine } from '../interpreter/ir';
 import { isBrainfuckDocument } from '../webview/tapePanel';
 
 let outputChannel: vscode.OutputChannel | undefined;
@@ -79,55 +80,85 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
 
   const tapeSize = config.get<number>('tapeSize', 30000);
   const cellWrapping = config.get<boolean>('cellWrapping', true);
-
-  const engine = new BrainfuckEngine(parseResult, {
-    tapeSize,
-    cellWrapping,
-    eofBehavior: 'zero',
-    recordHistory: false
-  });
-  if (hasInput) {
-    engine.setInput(userInput);
-  }
+  const optLevel = config.get<string>('execution.optimizationLevel', 'aggressive');
+  const useFastEngine = optLevel !== 'none';
 
   const startTime = Date.now();
   const maxSteps = config.get<number>('execution.maxSteps', 5000000);
-  let steps = 0;
 
-  while (
-    engine.state !== ExecutionState.TERMINATED &&
-    engine.state !== ExecutionState.ERROR &&
-    engine.state !== ExecutionState.WAITING_INPUT &&
-    steps < maxSteps
-  ) {
-    const batchSteps = Math.min(10000, maxSteps - steps);
-    const batch = engine.runBatch(batchSteps);
-    steps += batch.stepsExecuted;
+  let outputText = '';
+  let finalState: ExecutionState;
+  let finalSteps = 0;
+  let finalPtr = 0;
+  let finalVal = 0;
+  let errorMessage: string | undefined;
+
+  if (useFastEngine) {
+    const fastEngine = new FastBrainfuckEngine(parseResult, {
+      tapeSize,
+      cellWrapping,
+      eofBehavior: 'zero',
+      input: hasInput ? userInput : undefined
+    });
+    const execRes = fastEngine.execute(maxSteps);
+    outputText = fastEngine.output;
+    finalState = execRes.state;
+    finalSteps = execRes.ops;
+    finalPtr = fastEngine.ptr;
+    finalVal = fastEngine.memory[fastEngine.ptr];
+  } else {
+    const engine = new BrainfuckEngine(parseResult, {
+      tapeSize,
+      cellWrapping,
+      eofBehavior: 'zero',
+      recordHistory: false
+    });
+    if (hasInput) {
+      engine.setInput(userInput);
+    }
+    let steps = 0;
+    while (
+      engine.state !== ExecutionState.TERMINATED &&
+      engine.state !== ExecutionState.ERROR &&
+      engine.state !== ExecutionState.WAITING_INPUT &&
+      steps < maxSteps
+    ) {
+      const batchSteps = Math.min(10000, maxSteps - steps);
+      const batch = engine.runBatch(batchSteps);
+      steps += batch.stepsExecuted;
+    }
+    outputText = engine.output;
+    finalState = engine.state;
+    finalSteps = steps;
+    finalPtr = engine.ptr;
+    finalVal = engine.memory[engine.ptr];
+    errorMessage = engine.errorMessage;
   }
 
   const durationMs = Date.now() - startTime;
 
-  if (engine.output.length > 0) {
-    channel.appendLine(engine.output);
+  if (outputText.length > 0) {
+    channel.appendLine(outputText);
   } else {
     channel.appendLine('(Program produced no output)');
   }
 
   if (showSummary) {
     channel.appendLine('----------------------------------------------------');
-    if (engine.state === ExecutionState.TERMINATED) {
+    const optBadge = useFastEngine ? ' (IR Optimized)' : '';
+    if (finalState === ExecutionState.TERMINATED) {
       channel.appendLine(
-        `[SUCCESS] Completed: ${steps} steps | ${durationMs} ms | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
+        `[SUCCESS] Completed: ${finalSteps.toLocaleString()} operations${optBadge} | ${durationMs} ms | Active Cell: ${finalPtr} | Cell Value: ${finalVal}`
       );
-    } else if (engine.state === ExecutionState.ERROR) {
-      channel.appendLine(`[ERROR] ${engine.errorMessage}`);
-    } else if (engine.state === ExecutionState.WAITING_INPUT) {
+    } else if (finalState === ExecutionState.ERROR) {
+      channel.appendLine(`[ERROR] ${errorMessage || 'Unknown execution error'}`);
+    } else if (finalState === ExecutionState.WAITING_INPUT) {
       channel.appendLine(`[WAITING] Program paused: waiting for additional input.`);
-    } else if (steps >= maxSteps) {
-      channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps} steps and was terminated (possible infinite loop).`);
+    } else if (finalSteps >= maxSteps) {
+      channel.appendLine(`[WARNING] Program reached the limit of ${maxSteps.toLocaleString()} steps and was terminated (possible infinite loop).`);
     } else {
       channel.appendLine(
-        `[STOPPED] Execution stopped at step ${steps} | Active Cell: ${engine.ptr} | Cell Value: ${engine.memory[engine.ptr]}`
+        `[STOPPED] Execution stopped at step ${finalSteps.toLocaleString()}${optBadge} | Active Cell: ${finalPtr} | Cell Value: ${finalVal}`
       );
     }
   }

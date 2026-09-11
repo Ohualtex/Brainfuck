@@ -215,6 +215,16 @@
           "default": true,
           "description": "Show execution metrics summary (steps, duration, cell value) upon completion in Output Channel."
         },
+        "brainfuck.execution.optimizationLevel": {
+          "type": "string",
+          "enum": [
+            "aggressive",
+            "basic",
+            "none"
+          ],
+          "default": "aggressive",
+          "description": "Optimization level for Output Channel execution: 'aggressive' uses IR Bytecode with loop folding (50x-500x faster), 'basic' uses RLE contraction, and 'none' uses standard single-step execution."
+        },
         "brainfuck.diagnostics.enable": {
           "type": "boolean",
           "default": true,
