@@ -475,4 +475,64 @@ describe('Brainfuck IR & Optimization Engine', () => {
   });
 });
 
+describe('Built-in Examples', () => {
+  it('should parse and execute hello_world.bf correctly', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(path.join(__dirname, '../../examples/hello_world.bf'), 'utf8');
+    const parseRes = parseBrainfuck(code);
+    assert.equal(parseRes.errors.length, 0);
+
+    const fastEngine = new FastBrainfuckEngine(parseRes);
+    const execRes = fastEngine.execute();
+    assert.equal(execRes.state, ExecutionState.TERMINATED);
+    assert.equal(fastEngine.output, 'Hello World!\n');
+  });
+
+  it('should parse and execute addition.bf correctly with any numbers', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(path.join(__dirname, '../../examples/addition.bf'), 'utf8');
+    const parseRes = parseBrainfuck(code);
+    assert.equal(parseRes.errors.length, 0);
+
+    // Test 3 + 4 = 7
+    const engine1 = new FastBrainfuckEngine(parseRes, { input: '34' });
+    const res1 = engine1.execute();
+    assert.equal(res1.state, ExecutionState.TERMINATED);
+    assert.equal(engine1.output, '7\n');
+
+    // Test 7 + 8 = 15 (two-digit sum)
+    const engine2 = new FastBrainfuckEngine(parseRes, { input: '78' });
+    const res2 = engine2.execute();
+    assert.equal(res2.state, ExecutionState.TERMINATED);
+    assert.equal(engine2.output, '15\n');
+
+    // Test 9 + 9 = 18 (maximum single-digit sum)
+    const engine3 = new FastBrainfuckEngine(parseRes, { input: '99' });
+    const res3 = engine3.execute();
+    assert.equal(res3.state, ExecutionState.TERMINATED);
+    assert.equal(engine3.output, '18\n');
+
+    // Test 0 + 0 = 0
+    const engine4 = new FastBrainfuckEngine(parseRes, { input: '00' });
+    const res4 = engine4.execute();
+    assert.equal(res4.state, ExecutionState.TERMINATED);
+    assert.equal(engine4.output, '0\n');
+  });
+
+  it('should parse and execute echo.bf with input correctly', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const code = fs.readFileSync(path.join(__dirname, '../../examples/echo.bf'), 'utf8');
+    const parseRes = parseBrainfuck(code);
+    assert.equal(parseRes.errors.length, 0);
+
+    const fastEngine = new FastBrainfuckEngine(parseRes, { input: 'BrainfuckIDE\n' });
+    const execRes = fastEngine.execute();
+    assert.equal(execRes.state, ExecutionState.TERMINATED);
+    assert.equal(fastEngine.output, 'BrainfuckIDE\n');
+  });
+});
+
 
