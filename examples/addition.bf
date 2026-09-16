@@ -1,35 +1,27 @@
 /*
  * ========================================================
- *  Brainfuck Example: Universal Two-Number Adder
+ *  Brainfuck Example: Two-Number Addition
  * ========================================================
- *  Takes any two single-digit numbers from standard input,
- *  calculates their exact sum (0 to 18), and prints the
- *  formatted result followed by a newline!
- *
- *  Examples:
- *    Input: "34" -> Output: "7\n"
- *    Input: "78" -> Output: "15\n"
- *    Input: "99" -> Output: "18\n"
- *    Input: "05" -> Output: "5\n"
- *    Input: "00" -> Output: "0\n"
+ *  Adds two numbers (3 + 4 = 7) and outputs the result.
  *
  *  How It Works:
- *    1. Reads first digit character from input via ','
- *       and converts from ASCII to number by subtracting 48.
- *    2. Reads second digit character from input via ','
- *       and converts from ASCII to number by subtracting 48.
- *    3. Performs canonical transfer addition: [ < + > - ]
- *       so Cell 0 holds the raw sum S (0 to 18).
- *    4. Mechanical Counter / Odometer carry check:
- *       Counts down from S. If the counter reaches 10,
- *       the tens flag is set to 1 and the units counter
- *       is wrapped back to 0.
- *    5. Outputs the tens digit ('1') if present, followed
+ *    1. Initializes Cell 0 to 3 (+++) and Cell 1 to 4 (++++).
+ *       (To add other numbers, simply adjust the '+' counts below!)
+ *    2. Performs canonical transfer addition:
+ *       [ < + > - ]
+ *       Decrements Cell 1 while incrementing Cell 0 until
+ *       Cell 1 reaches 0. Cell 0 now holds the sum (7).
+ *    3. Mechanical Odometer Carry check:
+ *       Counts down the sum from Cell 0 into units (Cell 2).
+ *       If the count reaches 10, the tens flag (Cell 3) is
+ *       set to 1 and units counter wraps back to 0.
+ *    4. Formatted Output:
+ *       Prints the tens digit ('1') if sum >= 10, followed
  *       by the units digit ('0' to '9'), and a newline '\n'.
  *
  *  Memory Layout:
- *    Cell 0: Input 1 / Sum accumulator S (0..18)
- *    Cell 1: Input 2 / 10-countdown carry trigger
+ *    Cell 0: First addend (3)   -> holds sum (7), then drained to 0
+ *    Cell 1: Second addend (4)  -> 10-countdown carry trigger
  *    Cell 2: Units digit accumulator (0..9)
  *    Cell 3: Tens digit flag (0 or 1)
  *    Cell 4: Zero-check flag for carry condition
@@ -37,15 +29,13 @@
  * ========================================================
  */
 
-// Step 1: Read first digit and convert from ASCII ('0' = 48) to integer
-,
-> ++++++ [ < -------- > - ] <
+// Step 1: Initialize Cell 0 = 3 (First number)
++++
 
-// Step 2: Read second digit and convert from ASCII ('0' = 48) to integer
->,
-> ++++++ [ < -------- > - ] <
+// Step 2: Initialize Cell 1 = 4 (Second number)
+> ++++
 
-// Step 3: Canonical Transfer Addition: Cell 0 = Cell 0 + Cell 1
+// Step 3: Canonical Transfer Addition: Cell 0 = Cell 0 + Cell 1 (3 + 4 = 7)
 [ < + > - ] <
 
 // Step 4: Split sum S (in Cell 0) into Tens (Cell 3) and Units (Cell 2)
