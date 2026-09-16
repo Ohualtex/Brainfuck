@@ -282,6 +282,20 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     assert.ok(formatted.includes('/* Multiline block comment'));
     assert.ok(formatted.includes('++[\n  >+<-\n]'));
   });
+
+  it('should ignore /* */ block comments in visual debugger tapePanel parseCode', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const tapeSrc = fs.readFileSync(path.join(__dirname, '../../src/webview/tapePanel.ts'), 'utf8');
+    const match = tapeSrc.match(/function parseCode\(src\) \{([\s\S]*?)\n    function getCharCategoryClass/);
+    assert.ok(match, 'parseCode function found in tapePanel.ts');
+    const body = match[1].trim().replace(/\}$/, '');
+    const parseCode = new Function('src', body);
+    const additionCode = fs.readFileSync(path.join(__dirname, '../../examples/addition.bf'), 'utf8');
+    const tapeInstructions = parseCode(additionCode);
+    const regularRes = parseBrainfuck(additionCode);
+    assert.equal(tapeInstructions.length, regularRes.instructions.length);
+  });
 });
 
 describe('Brainfuck Hover Provider', () => {

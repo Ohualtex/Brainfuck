@@ -1283,6 +1283,22 @@ export class TapePanel {
           continue;
         }
 
+        // Skip multi-line block comments /* ... */
+        if (ch === '/' && src[i + 1] === '*') {
+          let j = i + 2;
+          while (j < src.length && !(src[j] === '*' && src[j + 1] === '/')) {
+            if (src.charCodeAt(j) === 10) {
+              line++;
+              col = 0;
+            } else {
+              col++;
+            }
+            j++;
+          }
+          i = j + 1;
+          continue;
+        }
+
         // Skip line comments starting with // or ; or # with space/tab
         if (
           (ch === '/' && src[i + 1] === '/') ||
