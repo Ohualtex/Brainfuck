@@ -1,7 +1,10 @@
 .vscode/**
+.github/**
+**/.DS_Store
 src/**
 test/**
 dist/test/**
+dist/**/*.map
 docs/**
 !docs/preview.png
 scratch/**
