@@ -5,6 +5,7 @@ dist/test/**
 docs/**
 !docs/preview.png
 scratch/**
+shelf/**
 esbuild.js
 tsconfig.json
 *.vsix
