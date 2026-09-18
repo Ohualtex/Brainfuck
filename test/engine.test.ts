@@ -191,7 +191,7 @@ describe('Parser Edge Cases & Bug Fixes', () => {
 
   it('should handle nested brackets inside header comments without syntax errors', () => {
     const code = [
-      '[ Brainfuck Program: Author [Miyamura] - test [nested] info ]',
+      '[ Brainfuck Program: Module [core] - test [nested] info ]',
       '++'
     ].join('\n');
     const res = parseBrainfuck(code);
