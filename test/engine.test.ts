@@ -551,4 +551,28 @@ describe('Built-in Examples', () => {
   });
 });
 
+describe('Brainfuck TextMate Grammar & Comment Highlighting', () => {
+  it('should ensure comment lines and blocks do not fragment on Brainfuck symbols', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const grammarPath = path.join(__dirname, '../../syntaxes/brainfuck.tmLanguage.json');
+    const grammar = JSON.parse(fs.readFileSync(grammarPath, 'utf8'));
+
+    assert.equal(grammar.scopeName, 'source.brainfuck');
+
+    // Verify comment line patterns exist for double slash and semicolon
+    const linePatterns = grammar.repository['comment-line']?.patterns || [];
+    assert.ok(linePatterns.some((p: any) => p.name === 'comment.line.double-slash.brainfuck' && p.match === '//.*$'));
+    assert.ok(linePatterns.some((p: any) => p.name === 'comment.line.semicolon.brainfuck' && p.match === ';.*$'));
+
+    // Verify fallback comments pattern excludes ;, /, \r, \n, \t, and space so comments are not preempted
+    const commentsPatterns = grammar.repository['comments']?.patterns || [];
+    const fallback = commentsPatterns[commentsPatterns.length - 1]?.match || '';
+    assert.ok(fallback.includes(';'), 'fallback comment pattern must exclude ;');
+    assert.ok(fallback.includes('/'), 'fallback comment pattern must exclude /');
+    assert.ok(fallback.includes(' '), 'fallback comment pattern must exclude whitespace');
+    assert.ok(fallback.includes('\\r') && fallback.includes('\\n') && fallback.includes('\\t'), 'fallback comment pattern must exclude control whitespace');
+  });
+});
+
 
