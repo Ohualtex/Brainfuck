@@ -6,7 +6,6 @@
 [![Visual Studio Marketplace](https://vsmarketplacebadges.dev/downloads-short/Ohualtex.extension-pack-for-brainfuck.svg?label=VS+Marketplace)](https://marketplace.visualstudio.com/items?itemName=Ohualtex.extension-pack-for-brainfuck)
 [![Open VSX](https://img.shields.io/open-vsx/dt/Ohualtex/extension-pack-for-brainfuck?label=Open%20VSX)](https://open-vsx.org/extension/Ohualtex/extension-pack-for-brainfuck)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.85.0-007ACC.svg)](https://code.visualstudio.com/)
 
 A standalone, batteries-included development environment for Visual Studio Code. Write, format, lint, run, and visually debug Brainfuck programs with zero external compilers, runtimes, or configurations required.
