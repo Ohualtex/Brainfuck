@@ -18,6 +18,7 @@ export interface EngineConfig {
   eofBehavior?: EofBehavior;
   recordHistory?: boolean;
   input?: string;
+  onOutput?: (char: string) => void;
 }
 
 export interface ExecutionSnapshot {
@@ -48,6 +49,7 @@ export class BrainfuckEngine {
   public readonly tapeSize: number;
   public readonly cellWrapping: boolean;
   public readonly eofBehavior: EofBehavior;
+  public readonly onOutput?: (char: string) => void;
   public breakpoints = new Set<number>(); // instruction indices or source offsets
 
   constructor(sourceOrParseResult: string | ParseResult, config?: EngineConfig) {
@@ -56,6 +58,7 @@ export class BrainfuckEngine {
     this.eofBehavior = config?.eofBehavior ?? 'zero';
     this.maxHistoryLength = config?.maxHistoryLength ?? 50000;
     this.recordHistoryEnabled = config?.recordHistory ?? true;
+    this.onOutput = config?.onOutput;
     this.memory = new Uint8Array(this.tapeSize);
 
     const parseResult = typeof sourceOrParseResult === 'string'
@@ -70,6 +73,10 @@ export class BrainfuckEngine {
         this.breakpoints.add(instr.index);
       }
     }
+
+    if (config?.input) {
+      this.setInput(config.input);
+    }
   }
 
   public getInstructions(): readonly Instruction[] {
@@ -83,6 +90,21 @@ export class BrainfuckEngine {
   public setInput(input: string) {
     this.inputBuffer = Array.from(input).map(c => c.charCodeAt(0) & 0xff);
     this.inputIndex = 0;
+  }
+
+  public appendInput(input: string | number[]) {
+    if (typeof input === 'string') {
+      for (let i = 0; i < input.length; i++) {
+        this.inputBuffer.push(input.charCodeAt(i) & 0xff);
+      }
+    } else {
+      for (const b of input) {
+        this.inputBuffer.push(b & 0xff);
+      }
+    }
+    if (this.state === ExecutionState.WAITING_INPUT) {
+      this.state = ExecutionState.PAUSED;
+    }
   }
 
   public provideInput(charCode: number) {
@@ -170,11 +192,16 @@ export class BrainfuckEngine {
         this.ip++;
         break;
 
-      case '.':
+      case '.': {
         this.recordHistory(prevCellIndex, prevCellValue);
-        this.output += String.fromCharCode(this.memory[this.ptr]);
+        const ch = String.fromCharCode(this.memory[this.ptr]);
+        this.output += ch;
+        if (this.onOutput) {
+          this.onOutput(ch);
+        }
         this.ip++;
         break;
+      }
 
       case ',':
         if (this.inputIndex < this.inputBuffer.length) {

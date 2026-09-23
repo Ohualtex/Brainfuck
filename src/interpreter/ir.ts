@@ -257,6 +257,7 @@ export class FastBrainfuckEngine {
   public tapeSize: number;
   public cellWrapping: boolean;
   public eofBehavior: 'zero' | 'no-change' | 'waiting';
+  public readonly onOutput?: (char: string) => void;
   public inputBuffer: number[] = [];
   public inputIndex: number = 0;
   public ir: IRInstruction[];
@@ -265,6 +266,7 @@ export class FastBrainfuckEngine {
     this.tapeSize = config.tapeSize || 30000;
     this.cellWrapping = config.cellWrapping !== false;
     this.eofBehavior = config.eofBehavior || 'zero';
+    this.onOutput = config.onOutput;
     this.memory = new Uint8Array(this.tapeSize);
 
     const parsed: ParseResult =
@@ -280,6 +282,21 @@ export class FastBrainfuckEngine {
   public setInput(input: string) {
     this.inputBuffer = Array.from(input).map(c => c.charCodeAt(0) & 0xff);
     this.inputIndex = 0;
+  }
+
+  public appendInput(input: string | number[]) {
+    if (typeof input === 'string') {
+      for (let i = 0; i < input.length; i++) {
+        this.inputBuffer.push(input.charCodeAt(i) & 0xff);
+      }
+    } else {
+      for (const b of input) {
+        this.inputBuffer.push(b & 0xff);
+      }
+    }
+    if (this.state === ExecutionState.WAITING_INPUT) {
+      this.state = ExecutionState.PAUSED;
+    }
   }
 
   /**
@@ -355,7 +372,11 @@ export class FastBrainfuckEngine {
         }
 
         case IROpType.OUTPUT: {
-          this.output += String.fromCharCode(mem[this.ptr]);
+          const ch = String.fromCharCode(mem[this.ptr]);
+          this.output += ch;
+          if (this.onOutput) {
+            this.onOutput(ch);
+          }
           this.ip++;
           break;
         }
