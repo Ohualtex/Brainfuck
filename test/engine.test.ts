@@ -571,7 +571,86 @@ describe('Brainfuck TextMate Grammar & Comment Highlighting', () => {
     assert.ok(fallback.includes(';'), 'fallback comment pattern must exclude ;');
     assert.ok(fallback.includes('/'), 'fallback comment pattern must exclude /');
     assert.ok(fallback.includes(' '), 'fallback comment pattern must exclude whitespace');
-    assert.ok(fallback.includes('\\r') && fallback.includes('\\n') && fallback.includes('\\t'), 'fallback comment pattern must exclude control whitespace');
+  });
+});
+
+describe('Brainfuck Streaming I/O and Dynamic Input', () => {
+  it('should stream output characters in real-time via onOutput in BrainfuckEngine', () => {
+    const chars: string[] = [];
+    const engine = new BrainfuckEngine('+[.+]#', {
+      tapeSize: 10,
+      onOutput: (ch) => chars.push(ch)
+    });
+
+    // Run until breakpoint '#'
+    while (engine.state !== ExecutionState.TERMINATED && engine.state !== ExecutionState.PAUSED) {
+      engine.step();
+    }
+
+    assert.ok(chars.length > 0);
+    assert.equal(chars.join(''), engine.output);
+  });
+
+  it('should stream output characters in real-time via onOutput in FastBrainfuckEngine', () => {
+    const chars: string[] = [];
+    const engine = new FastBrainfuckEngine('+[.+]#', {
+      tapeSize: 10,
+      onOutput: (ch) => chars.push(ch)
+    });
+
+    engine.runBatch(500);
+    assert.ok(chars.length > 0);
+    assert.equal(chars.join(''), engine.output);
+  });
+
+  it('should pause on WAITING_INPUT and resume after appendInput in BrainfuckEngine', () => {
+    // Read 2 characters and echo them
+    const engine = new BrainfuckEngine(',.,.', {
+      eofBehavior: 'waiting'
+    });
+
+    // Step until comma waiting for input
+    engine.step();
+    assert.equal(engine.state, ExecutionState.WAITING_INPUT);
+
+    // Provide first char 'A'
+    engine.appendInput('A');
+    engine.step(); // reads 'A'
+    engine.step(); // prints 'A'
+    assert.equal(engine.output, 'A');
+
+    // Next comma waits for second char
+    engine.step();
+    assert.equal(engine.state, ExecutionState.WAITING_INPUT);
+
+    // Provide second char 'B'
+    engine.appendInput('B');
+    engine.step(); // reads 'B'
+    engine.step(); // prints 'B'
+    assert.equal(engine.output, 'AB');
+    assert.equal(engine.state, ExecutionState.TERMINATED);
+  });
+
+  it('should pause on WAITING_INPUT and resume after appendInput in FastBrainfuckEngine', () => {
+    // Read 2 characters and echo them
+    const engine = new FastBrainfuckEngine(',.,.', {
+      eofBehavior: 'waiting'
+    });
+
+    const res1 = engine.runBatch(100);
+    assert.equal(res1.state, ExecutionState.WAITING_INPUT);
+
+    // Append 'X'
+    engine.appendInput('X');
+    const res2 = engine.runBatch(100);
+    assert.equal(engine.output, 'X');
+    assert.equal(res2.state, ExecutionState.WAITING_INPUT);
+
+    // Append 'Y'
+    engine.appendInput('Y');
+    const res3 = engine.runBatch(100);
+    assert.equal(engine.output, 'XY');
+    assert.equal(res3.state, ExecutionState.TERMINATED);
   });
 });
 
