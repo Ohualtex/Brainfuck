@@ -19,6 +19,10 @@ export class BrainfuckPseudoterminal implements vscode.Pseudoterminal {
   private isRunning: boolean = false;
   private isAborted: boolean = false;
 
+  public get isExecuting(): boolean {
+    return this.isRunning;
+  }
+
   constructor(
     private document: vscode.TextDocument,
     private config: vscode.WorkspaceConfiguration
@@ -38,6 +42,10 @@ export class BrainfuckPseudoterminal implements vscode.Pseudoterminal {
   }
 
   public handleInput(data: string): void {
+    if (!this.isRunning) {
+      return;
+    }
+
     // Check for Ctrl+C (ASCII 3)
     if (data === '\x03') {
       this.writeEmitter.fire('^C\r\n\x1b[33m[Execution interrupted by user]\x1b[0m\r\n');
