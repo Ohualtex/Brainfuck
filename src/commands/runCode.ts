@@ -3,6 +3,7 @@ import { BrainfuckEngine, ExecutionState } from '../interpreter/engine';
 import { parseBrainfuck } from '../interpreter/parser';
 import { FastBrainfuckEngine } from '../interpreter/ir';
 import { isBrainfuckDocument } from '../webview/tapePanel';
+import { runBrainfuckInTerminal } from '../terminal/terminalRunner';
 
 let outputChannel: vscode.OutputChannel | undefined;
 
@@ -40,6 +41,17 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     return;
   }
 
+  const config = vscode.workspace.getConfiguration('brainfuck');
+  const runTarget = config.get<string>('execution.runTarget', 'terminal');
+
+  if (runTarget === 'terminal') {
+    return runBrainfuckInTerminal(doc);
+  }
+
+  return runBrainfuckInOutputChannel(doc, config);
+}
+
+async function runBrainfuckInOutputChannel(doc: vscode.TextDocument, config: vscode.WorkspaceConfiguration) {
   const source = doc.getText();
   const parseResult = parseBrainfuck(source);
 
@@ -66,7 +78,6 @@ export async function runBrainfuckCode(uri?: vscode.Uri) {
     userInput = input;
   }
 
-  const config = vscode.workspace.getConfiguration('brainfuck');
   const clearPrevious = config.get<boolean>('execution.clearPreviousOutput', false);
   const showSummary = config.get<boolean>('execution.showSummary', true);
 

@@ -200,6 +200,15 @@
           "default": true,
           "description": "Indent using spaces instead of tabs when formatting."
         },
+        "brainfuck.execution.runTarget": {
+          "type": "string",
+          "enum": [
+            "terminal",
+            "outputChannel"
+          ],
+          "default": "terminal",
+          "description": "Where to run Brainfuck programs: 'terminal' uses the interactive VS Code Terminal (supports real-time prompts, stdin, and ANSI colors), 'outputChannel' uses the read-only Output Channel."
+        },
         "brainfuck.execution.maxSteps": {
           "type": "number",
           "default": 5000000,
