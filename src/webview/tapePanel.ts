@@ -700,7 +700,8 @@ export class TapePanel {
       align-items: center;
       gap: 4px;
       overflow-x: auto;
-      padding: 6px 2px 14px 2px;
+      padding: 6px 6px 22px 6px;
+      scroll-behavior: smooth;
       scrollbar-width: thin;
     }
 
@@ -745,6 +746,7 @@ export class TapePanel {
       transition: all 0.1s ease;
       cursor: pointer;
       flex-shrink: 0;
+      position: relative;
     }
 
     .instr-chip.current {
@@ -753,6 +755,21 @@ export class TapePanel {
       color: #ffffff;
       font-weight: 700;
       z-index: 2;
+      box-shadow: 0 0 10px rgba(0, 152, 255, 0.7);
+    }
+
+    .instr-chip.current::after {
+      content: '▲ IP';
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--status-blue);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     .instr-chip.ptr-move { color: #9cdcfe; }
@@ -1371,9 +1388,13 @@ export class TapePanel {
 
       streamCounter.textContent = (ip + 1) + ' / ' + instructions.length;
 
-      // Windowed render around IP (configurable, default: 100 instructions)
+      // Keep stream centered around IP, matching tape conveyor windowing
       const windowSize = VISIBLE_INSTRUCTIONS;
-      const start = Math.max(0, Math.min(ip - Math.floor(windowSize / 2), instructions.length - windowSize));
+      const half = Math.floor(windowSize / 2);
+      let start = Math.max(0, ip - half);
+      if (start + windowSize > instructions.length) {
+        start = Math.max(0, instructions.length - windowSize);
+      }
       const end = Math.min(instructions.length, start + windowSize);
 
       let html = '';
@@ -1520,6 +1541,12 @@ export class TapePanel {
       const activeCard = tapeConveyor.querySelector('.cell-card.active');
       if (activeCard && editingCell === null) {
         activeCard.scrollIntoView({ behavior: isRunning ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
+      }
+
+      // Keep active instruction chip in view centered
+      const activeChip = streamWrapper.querySelector('.instr-chip.current');
+      if (activeChip) {
+        activeChip.scrollIntoView({ behavior: isRunning ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
       }
 
       // Notify editor to highlight current instruction when executing
