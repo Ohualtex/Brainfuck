@@ -2,7 +2,7 @@
 
 > **The all-in-one, zero-dependency Brainfuck development studio & visual debugger for VS Code.**
 
-[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](package.json)
 [![Visual Studio Marketplace](https://vsmarketplacebadges.dev/downloads-short/Ohualtex.extension-pack-for-brainfuck.svg?label=VS+Marketplace)](https://marketplace.visualstudio.com/items?itemName=Ohualtex.extension-pack-for-brainfuck)
 [![Open VSX](https://img.shields.io/open-vsx/dt/Ohualtex/extension-pack-for-brainfuck?label=Open%20VSX)](https://open-vsx.org/extension/Ohualtex/extension-pack-for-brainfuck)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
