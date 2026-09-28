@@ -487,6 +487,43 @@ describe('Brainfuck IR & Optimization Engine', () => {
     assert.equal(res.state, ExecutionState.TERMINATED);
     assert.equal(echoEngine.output, 'OK');
   });
+
+  it('should detect infinite scan loop safely and report error when no zero cell exists in FastBrainfuckEngine', () => {
+    // Tape of 100 cells, all non-zero (filled with 1s)
+    const scanEngine = new FastBrainfuckEngine('[>]', { tapeSize: 100 });
+    scanEngine.memory.fill(1); // No 0 cell anywhere on the tape
+
+    const batch = scanEngine.runBatch(500);
+    assert.equal(batch.state, ExecutionState.ERROR);
+    assert.equal(scanEngine.state, ExecutionState.ERROR);
+    assert.ok(scanEngine.errorMessage?.includes('infinite loop detected'));
+  });
+
+  it('should find zero cell accurately during scan loop in FastBrainfuckEngine', () => {
+    const scanEngine = new FastBrainfuckEngine('[>]', { tapeSize: 100 });
+    scanEngine.memory.fill(1);
+    scanEngine.memory[42] = 0; // Target zero cell at index 42
+
+    const batch = scanEngine.runBatch(500);
+    assert.equal(batch.state, ExecutionState.TERMINATED);
+    assert.equal(scanEngine.ptr, 42);
+  });
+
+  it('should reset FastBrainfuckEngine state correctly via reset()', () => {
+    const engine = new FastBrainfuckEngine('+++>++');
+    engine.execute();
+    assert.equal(engine.memory[0], 3);
+    assert.equal(engine.memory[1], 2);
+    assert.equal(engine.state, ExecutionState.TERMINATED);
+
+    engine.reset();
+    assert.equal(engine.memory[0], 0);
+    assert.equal(engine.memory[1], 0);
+    assert.equal(engine.ptr, 0);
+    assert.equal(engine.ip, 0);
+    assert.equal(engine.state, ExecutionState.PAUSED);
+    assert.equal(engine.errorMessage, undefined);
+  });
 });
 
 describe('Built-in Examples', () => {

@@ -261,6 +261,7 @@ export class FastBrainfuckEngine {
   public inputBuffer: number[] = [];
   public inputIndex: number = 0;
   public ir: IRInstruction[];
+  public errorMessage?: string;
 
   constructor(sourceOrParsed: string | ParseResult, config: EngineConfig = {}) {
     this.tapeSize = config.tapeSize || 30000;
@@ -332,7 +333,7 @@ export class FastBrainfuckEngine {
 
         case IROpType.MOVE: {
           const offset = op.value!;
-          this.ptr = (this.ptr + offset + tapeSize * Math.ceil(Math.abs(offset) / tapeSize + 1)) % tapeSize;
+          this.ptr = ((this.ptr + offset) % tapeSize + tapeSize) % tapeSize;
           this.ip++;
           break;
         }
@@ -348,7 +349,7 @@ export class FastBrainfuckEngine {
           if (srcVal !== 0 && op.multTargets) {
             for (let i = 0; i < op.multTargets.length; i++) {
               const t: AddMultTarget = op.multTargets[i];
-              const destPtr = (this.ptr + t.offset + tapeSize * Math.ceil(Math.abs(t.offset) / tapeSize + 1)) % tapeSize;
+              const destPtr = ((this.ptr + t.offset) % tapeSize + tapeSize) % tapeSize;
               const delta = srcVal * t.factor;
               if (wrapping) {
                 mem[destPtr] = (mem[destPtr] + delta) & 0xff;
@@ -364,8 +365,15 @@ export class FastBrainfuckEngine {
 
         case IROpType.SCAN: {
           const step = op.value || 1;
-          while (mem[this.ptr] !== 0) {
-            this.ptr = (this.ptr + step + tapeSize) % tapeSize;
+          let scanned = 0;
+          while (mem[this.ptr] !== 0 && scanned < tapeSize) {
+            this.ptr = ((this.ptr + step) % tapeSize + tapeSize) % tapeSize;
+            scanned++;
+          }
+          if (scanned >= tapeSize && mem[this.ptr] !== 0) {
+            this.state = ExecutionState.ERROR;
+            this.errorMessage = 'Scan loop [>] / [<]: No zero cell found on tape (infinite loop detected).';
+            return { opsExecuted: ops + 1, state: this.state };
           }
           this.ip++;
           break;
@@ -400,8 +408,13 @@ export class FastBrainfuckEngine {
         }
 
         case IROpType.JUMP_ZERO: {
+          if (op.target === undefined) {
+            this.state = ExecutionState.ERROR;
+            this.errorMessage = 'No matching closing bracket found.';
+            return { opsExecuted: ops + 1, state: this.state };
+          }
           if (mem[this.ptr] === 0) {
-            this.ip = op.target!;
+            this.ip = op.target;
           } else {
             this.ip++;
           }
@@ -409,8 +422,13 @@ export class FastBrainfuckEngine {
         }
 
         case IROpType.JUMP_NOT_ZERO: {
+          if (op.target === undefined) {
+            this.state = ExecutionState.ERROR;
+            this.errorMessage = 'No matching opening bracket found.';
+            return { opsExecuted: ops + 1, state: this.state };
+          }
           if (mem[this.ptr] !== 0) {
-            this.ip = op.target!;
+            this.ip = op.target;
           } else {
             this.ip++;
           }
@@ -454,5 +472,16 @@ export class FastBrainfuckEngine {
 
     const durationMs = Date.now() - start;
     return { state: this.state, ops: totalOps, durationMs };
+  }
+
+  public reset() {
+    this.memory.fill(0);
+    this.ptr = 0;
+    this.ip = 0;
+    this.output = '';
+    this.inputIndex = 0;
+    this.stepCount = 0;
+    this.state = ExecutionState.PAUSED;
+    this.errorMessage = undefined;
   }
 }

@@ -117,6 +117,7 @@ async function runBrainfuckInOutputChannel(doc: vscode.TextDocument, config: vsc
     finalSteps = execRes.ops;
     finalPtr = fastEngine.ptr;
     finalVal = fastEngine.memory[fastEngine.ptr];
+    errorMessage = fastEngine.errorMessage;
   } else {
     const engine = new BrainfuckEngine(parseResult, {
       tapeSize,

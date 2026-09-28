@@ -178,6 +178,7 @@ export class BrainfuckPseudoterminal implements vscode.Pseudoterminal {
       finalState = this.isAborted ? ExecutionState.PAUSED : engine.state;
       finalPtr = engine.ptr;
       finalVal = engine.memory[finalPtr];
+      errorMessage = engine.errorMessage;
     } else {
       const engine = new BrainfuckEngine(parseResult, {
         tapeSize,
