@@ -54,19 +54,28 @@ export function parseBrainfuck(source: string): ParseResult {
     // Skip multi-line block comments /* ... */
     if (ch === '/' && source[i + 1] === '*') {
       let j = i + 2;
-      while (j < source.length && !(source[j] === '*' && source[j + 1] === '/')) {
-        if (source[j] === '\n') {
-          line++;
-          col = 0;
-        } else {
-          col++;
-        }
+      while (j < source.length - 1 && !(source[j] === '*' && source[j + 1] === '/')) {
         j++;
       }
       if (j < source.length - 1 && source[j] === '*' && source[j + 1] === '/') {
-        col += 2;
+        for (let k = i; k <= j + 1; k++) {
+          if (source[k] === '\n') {
+            line++;
+            col = 0;
+          } else {
+            col++;
+          }
+        }
         i = j + 1;
       } else {
+        for (let k = i; k < source.length; k++) {
+          if (source[k] === '\n') {
+            line++;
+            col = 0;
+          } else {
+            col++;
+          }
+        }
         i = source.length;
       }
       continue;

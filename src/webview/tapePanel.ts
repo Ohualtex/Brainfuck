@@ -1303,16 +1303,30 @@ export class TapePanel {
         // Skip multi-line block comments /* ... */
         if (ch === '/' && src[i + 1] === '*') {
           let j = i + 2;
-          while (j < src.length && !(src[j] === '*' && src[j + 1] === '/')) {
-            if (src.charCodeAt(j) === 10) {
-              line++;
-              col = 0;
-            } else {
-              col++;
-            }
+          while (j < src.length - 1 && !(src[j] === '*' && src[j + 1] === '/')) {
             j++;
           }
-          i = j + 1;
+          if (j < src.length - 1 && src[j] === '*' && src[j + 1] === '/') {
+            for (let k = i; k <= j + 1; k++) {
+              if (src.charCodeAt(k) === 10) {
+                line++;
+                col = 0;
+              } else {
+                col++;
+              }
+            }
+            i = j + 1;
+          } else {
+            for (let k = i; k < src.length; k++) {
+              if (src.charCodeAt(k) === 10) {
+                line++;
+                col = 0;
+              } else {
+                col++;
+              }
+            }
+            i = src.length;
+          }
           continue;
         }
 
@@ -1344,6 +1358,14 @@ export class TapePanel {
               j++;
             }
             if (depth === 0 && j < src.length && src[j] === ']') {
+              for (let k = i; k <= j; k++) {
+                if (src.charCodeAt(k) === 10) {
+                  line++;
+                  col = 0;
+                } else {
+                  col++;
+                }
+              }
               i = j;
               continue;
             }

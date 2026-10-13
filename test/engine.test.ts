@@ -296,6 +296,37 @@ describe('Parser Edge Cases & Bug Fixes', () => {
     const regularRes = parseBrainfuck(additionCode);
     assert.equal(tapeInstructions.length, regularRes.instructions.length);
   });
+
+  it('should accurately calculate column offsets for instructions following /* ... */ block comments', () => {
+    // Index 0: '+', index 2..10: '/* abc */', index 12: '+'
+    const code = '+ /* abc */ +';
+    const res = parseBrainfuck(code);
+    assert.equal(res.instructions.length, 2);
+    assert.equal(res.instructions[0].line, 0);
+    assert.equal(res.instructions[0].col, 0);
+    assert.equal(res.instructions[1].line, 0);
+    assert.equal(res.instructions[1].col, 12); // exact column 12 of second '+'
+
+    // Hover at line 0, col 12 should find '+' directly
+    const hover = getHoverInfo(code, 0, 12);
+    assert.ok(hover, 'Hover should be found on instruction following block comment');
+    assert.match(hover.title, /\+1/);
+  });
+
+  it('should format multi-line block comments with internal brackets [v1.0] without splitting or corrupting indentation', () => {
+    const code = [
+      '/*',
+      'Version [1.0] Release Notes',
+      'Important notes: [do not delete]',
+      '*/',
+      '++[>+<-]'
+    ].join('\n');
+    const formatted = formatBrainfuckSource(code, 2, true);
+    assert.ok(formatted.includes('Version [1.0] Release Notes'));
+    assert.ok(formatted.includes('Important notes: [do not delete]'));
+    // Code part after block comment must retain clean indentation
+    assert.ok(formatted.includes('++[\n  >+<-\n]'));
+  });
 });
 
 describe('Brainfuck Hover Provider', () => {
