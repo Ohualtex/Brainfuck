@@ -6,6 +6,7 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
   let indentLevel = 0;
   let formatted = '';
   let currentLine = '';
+  let inBlockComment = false;
 
   const flushLine = () => {
     const trimmed = currentLine.trim();
@@ -30,16 +31,38 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
       continue;
     }
 
-    // Check if entire line is a comment
+    // 1. If currently inside a multi-line block comment
+    if (inBlockComment) {
+      flushLine();
+      formatted += indentStr.repeat(Math.max(0, indentLevel)) + trimmed + '\n';
+      if (trimmed.includes('*/')) {
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    // 2. Check if line starts a multi-line block comment: /* without matching */
+    if (trimmed.startsWith('/*')) {
+      flushLine();
+      formatted += indentStr.repeat(Math.max(0, indentLevel)) + trimmed + '\n';
+      if (!trimmed.includes('*/')) {
+        inBlockComment = true;
+      }
+      continue;
+    }
+
+    // 3. Check if entire line is a comment or comment continuation
     if (
       trimmed.startsWith('//') ||
-      trimmed.startsWith('/*') ||
       trimmed.startsWith('*') ||
       trimmed.endsWith('*/') ||
       trimmed.startsWith(';')
     ) {
       flushLine();
       formatted += indentStr.repeat(Math.max(0, indentLevel)) + trimmed + '\n';
+      if (trimmed.includes('*/')) {
+        inBlockComment = false;
+      }
       continue;
     }
 
@@ -50,6 +73,9 @@ export function formatBrainfuckSource(source: string, tabSize = 2, insertSpaces 
     if (commentMatch && commentMatch.index !== undefined) {
       codePart = rawLine.slice(0, commentMatch.index);
       commentPart = commentMatch[0].trim();
+      if (commentPart.startsWith('/*') && !commentPart.includes('*/')) {
+        inBlockComment = true;
+      }
     }
 
     // Format the code portion
